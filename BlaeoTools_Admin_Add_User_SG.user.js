@@ -1,7 +1,7 @@
 // ==UserScript==
 // @author revilheart
 // @description Helps automate the process of adding users to the BLAEO website.
-// @grant GM.xmlHttpRequest
+// @grant none
 // @match https://www.steamgifts.com/discussion/b9XQO/*
 // @name BlaeoTools: Admin - Add User (SG)
 // @namespace BlaeoTools
