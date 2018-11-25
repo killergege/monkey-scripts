@@ -2,7 +2,7 @@
 
 Adds some cool features to [BLAEO](https://backlog-deepness.rhcloud.com/).
 
-### [Install](https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js)
+### [Install](https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/scripts/enhanced-blaeo/enhanced-blaeo.user.js)
 
 ---
 
@@ -30,4 +30,4 @@ Adds some cool features to [BLAEO](https://backlog-deepness.rhcloud.com/).
 
 ## Changelog
 
-* **Nov 11, 2018** v3.0.0 released
+* **Nov 25, 2018** v3.0.0 released

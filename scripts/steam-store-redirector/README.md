@@ -2,7 +2,7 @@
 
 Redirects removed games from the Steam store to SteamCommunity or SteamDB.
 
-### [Install](https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/steam-store-redirector/steam-store-redirector.user.js)
+### [Install](https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/scripts/steam-store-redirector/steam-store-redirector.user.js)
 
 ---
 
@@ -22,4 +22,4 @@ Redirects removed games from the Steam store to SteamCommunity or SteamDB.
 
 ## Changelog
 
-* **Nov 11, 2018** v3.0.0 released
+* **Nov 25, 2018** v3.0.0 released
