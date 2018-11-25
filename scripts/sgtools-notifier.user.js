@@ -2,15 +2,19 @@
 // @author gsrafael01
 // @description Notifies the user when a SGTools rules check is complete and has an option to redirect to the giveaway.
 // @grant GM.info
+// @grant GM.getValue
+// @grant GM.setValue
 // @grant GM_info
+// @grant GM_getValue
+// @grant GM_setValue
 // @match https://www.sgtools.info/*
 // @match http://www.sgtools.info/*
 // @name SGTools Notifier
 // @namespace sgToolsNotifier
 // @noframes
 // @require https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0-beta.3/utils/settings.js
-// @version 3.0.0-beta.3
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0-beta.4/utils/settings.js
+// @version 3.0.0-beta.4
 // ==/UserScript==
 
 (async () => {
@@ -33,7 +37,7 @@
         }
       ]
     }
-  ]);
+  ], true);
 
   let checkButton = null;
   let errorElement = null;

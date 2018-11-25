@@ -14,10 +14,10 @@
 // @namespace steamStoreRedirector
 // @noframes
 // @require https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0-beta.3/utils/settings.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0-beta.3/utils/mutation-observer.js
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0-beta.4/utils/settings.js
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0-beta.4/utils/mutation-observer.js
 // @run-at document-start
-// @version 3.0.0-beta.3
+// @version 3.0.0-beta.4
 // ==/UserScript==
 
 (async () => {
