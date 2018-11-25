@@ -11,10 +11,11 @@ const monkeySettings = {
   name: GM.info.script.name,
   namespace: GM.info.script.namespace,
 
-  async init(options) {
-    this.url = GM.info.script.matches[0].replace(/\*/, `?${this.namespace}=settings`);
-    this.settings = JSON.parse(await this.get(this.namespace, `{}`));
+  async init(options, useGmStorage = false) {
     this.options = options;
+    this.useGmStorage = useGmStorage;
+    this.settings = JSON.parse(await this.get(this.namespace, `{}`));
+    this.url = GM.info.script.matches[0].replace(/\*/, `?${this.namespace}=settings`);
     await this.check();
   },
 
@@ -54,7 +55,7 @@ const monkeySettings = {
   },
 
   get(key, defaultValue) {
-    if (this.url.match(/^https:\/\/\*\/\*/)) {
+    if (this.useGmStorage) {
       return GM.getValue(key, defaultValue);
     } else {
       return window.localStorage[key] || defaultValue;
@@ -62,7 +63,7 @@ const monkeySettings = {
   },
 
   set(key, value) {
-    if (this.url.match(/^https:\/\/\*\/\*/)) {
+    if (this.useGmStorage) {
       return GM.setValue(key, JSON.stringify(value));
     } else {
       window.localStorage[key] = JSON.stringify(value);

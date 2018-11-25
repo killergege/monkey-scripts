@@ -9,8 +9,8 @@
 // @namespace sgToolsNotifier
 // @noframes
 // @require https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0-beta.2/utils/settings.js
-// @version 3.0.0-beta.2
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0-beta.3/utils/settings.js
+// @version 3.0.0-beta.3
 // ==/UserScript==
 
 (async () => {
