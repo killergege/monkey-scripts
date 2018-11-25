@@ -14,10 +14,10 @@
 // @namespace steamStoreRedirector
 // @noframes
 // @require https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0-beta.4/utils/settings.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0-beta.4/utils/mutation-observer.js
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/Settings.js
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/MutationObserver.js
 // @run-at document-start
-// @version 3.0.0-beta.4
+// @version 3.0.0
 // ==/UserScript==
 
 (async () => {
@@ -25,6 +25,7 @@
 
   await monkeySettings.init([
     {
+      defaultValue: 0,
       id: `destination`,
       message: `Where do you want to be redirected to?`,
       values: [
@@ -40,7 +41,7 @@
         }
       ]
     }
-  ], true);
+  ]);
 
   init();
 

@@ -10,11 +10,11 @@
 // @match https://www.sgtools.info/*
 // @match http://www.sgtools.info/*
 // @name SGTools Notifier
-// @namespace sgToolsNotifier
+// @namespace sgtoolsNotifier
 // @noframes
 // @require https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0-beta.4/utils/settings.js
-// @version 3.0.0-beta.4
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/Settings.js
+// @version 3.0.0
 // ==/UserScript==
 
 (async () => {
@@ -22,6 +22,7 @@
 
   await monkeySettings.init([
     {
+      defaultValue: false,
       id: `doRedirect`,
       message: `Do you want to be redirected to the giveaway after the check is complete?`,
       values: [
@@ -37,7 +38,7 @@
         }
       ]
     }
-  ], true);
+  ]);
 
   let checkButton = null;
   let errorElement = null;
@@ -49,7 +50,7 @@
   function init() {
     checkButton = document.querySelector(`#check`);
     if (checkButton) {
-      errorElement = document.querySelector(`.error_alert`);
+      errorElement = document.querySelector(`#error_alert`);
       rulesElement = document.querySelector(`.rules`);
       urlElement = document.querySelector(`#gaurl`);
       checkButton.addEventListener(`click`, waitForRulesCheck);
@@ -61,13 +62,13 @@
       // Rules have been checked and the user passed them.
       if (monkeySettings.getSetting(`doRedirect`)) {
         checkButton.removeEventListener(`click`, waitForRulesCheck);
-        checkButton.dispatchEvent(new Event(`click`));
+        checkButton.click();
         waitForGiveawayLink();
       } else {
         document.title = `✔️ ${document.title}`;
       }
     } else if (!errorElement.classList.contains(`hidden`)) {
-      // Rules have been checked and the user did not pass them.
+      // Rules have been checked and the user failed to pass them.
       document.title = `❌ ${document.title}`;
     } else {
       // Rules have not been checked.

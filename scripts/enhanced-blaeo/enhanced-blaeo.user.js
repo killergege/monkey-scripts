@@ -9,27 +9,36 @@
 // @grant GM_setValue
 // @grant GM_xmlhttpRequest
 // @match https://www.backlog-assassins.net/*
-// @match http://www.backlog-assassins.net/*
+// @match https://www.steamgifts.com/discussion/b9XQO/*
 // @name Enhanced BLAEO
 // @namespace enhancedBlaeo
 // @require https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0-beta.4/utils/dom-parser.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0-beta.4/utils/request.js
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/DomParser.js
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/Request.js
 // @run-at document-idle
-// @version 3.0.0-beta.4
+// @version 3.0.0
 // ==/UserScript==
 
-(async () => {
+(() => {
   `use strict`;
 
+  const isInBlaeo = window.location.host === `www.backlog-assassins.net`;
   const settings = {};
+  const url = `https://www.backlog-assassins.net`;
 
-  await setDefaultValues();
-  document.addEventListener(`turbolinks:load`, loadFeatures);
-  await loadFeatures();
+  init();
+
+  async function init() {
+    await setDefaultValues();console.log(settings, isInBlaeo);
+    if (isInBlaeo) {
+      document.addEventListener(`turbolinks:load`, loadFeatures);
+    }
+    await loadFeatures();
+  }
 
   async function setDefaultValues() {
     const oldValues = {
+      isAdmin: ``,
       steamApiKey: `SteamAPIKey`,
       steamId: `SteamID64`,
       username: `Username`,
@@ -40,6 +49,7 @@
       tlcList: `TLCList`
     };
     const defaultValues = {
+      isAdmin: false,
       steamApiKey: ``,
       steamId: ``,
       username: `?`,
@@ -63,21 +73,98 @@
         settings[key] = await GM.getValue(key);
       }
     }
-  }
-
-  async function loadFeatures() {
-    if (window.location.href.match(/\/settings\//)) {
-      addSettingsButton();
-    } else if (settings.steamApiKey) {
-      if (!settings.tlcList || (settings.tlcCurrentMonth !== getCurrentMonth())) {
-        await getTlcList();
-      } else if (window.location.href.match(settings.tlcList)) {
-        await checkTlcList();
-      }
+    if (isInBlaeo && document.querySelector(`[href="/admin"]`)) {
+      settings.isAdmin = true;
+      GM.setValue(`isAdmin`, true);
     }
   }
 
-  function addSettingsButton() {
+  async function loadFeatures() {
+    if (isInBlaeo) {
+      if (window.location.href.match(/\/admin\/users\/new\?steamId/)) {
+        addAtUser();
+      } else if (window.location.href.match(/\/settings\//)) {
+        addSmButton();
+      }
+      if (settings.steamApiKey) {
+        if (!settings.tlcList || (settings.tlcCurrentMonth !== getCurrentMonth())) {
+          await getTlcList();
+        } else if (window.location.href.match(settings.tlcList)) {
+          await checkTlcList();
+        }
+      }
+    } else if (settings.isAdmin && window.location.href.match(/\/discussion\/b9XQO\//)) {
+      addAtButtons();
+    }
+  }
+
+  // [AT] Admin Tools
+
+  function addAtButtons() {
+    const elements = document.querySelectorAll(`.comment__username`);
+    for (const element of elements) {
+      const username = element.textContent.trim();
+      element.insertAdjacentHTML(`beforeEnd`, `
+        <img src="https://www.backlog-assassins.net/logo-32x32.png" height="12" style="cursor: pointer;" title="Add user to BLAEO">
+      `);
+      const button = element.lastElementChild;
+      button.addEventListener(`click`, () => openAtWindow(button, username));
+    }
+  }
+
+  async function openAtWindow(button, username) {
+    let success = true;
+    try {
+      window.open(`https://www.backlog-assassins.net/admin/users/new?steamId=${(await monkeyRequest.send(`https://www.steamgifts.com/user/${username}`)).dom.querySelector(`[href*="/profiles/"]`).getAttribute(`href`).match(/\d+/)[0]}`, null, `height=100,width=100`);
+    } catch (error) {
+      window.alert(`An error occurred when adding ${username}...`);
+      success = false;
+    }
+    if (success) {
+      button.remove();
+    }
+  }
+
+  async function addAtUser() {
+    const match = window.location.search.match(/\?steamId=(\d+)/);
+    if (match) {
+      const steamId = match[1];
+      if (window.localStorage.enhancedBlaeo_at === steamId) {
+        delete window.localStorage.enhancedBlaeo_at;
+        window.close();
+        return;
+      }
+      window.localStorage.enhancedBlaeo_at = steamId;
+      (await getElement(`[name=q]`)).value = steamId;
+      (await getElement(`.btn-default`)).click();
+      const alertElement = await getElement(`.alert`);
+      if (!alertElement.classList.contains(`alert-success`)) {
+        delete window.localStorage.enhancedBlaeo_at;
+        window.close();
+        return;
+      }
+      (await getElement(`.btn-primary:not([disabled])`)).click();
+    }
+  }
+
+  function getElement(query) {
+    return new Promise(resolve => {
+      waitForElement(query, resolve);
+    });
+  }
+
+  function waitForElement(query, resolve) {
+    const element = document.querySelector(query);
+    if (element) {
+      resolve(element);
+    } else {
+      setTimeout(waitForElement, 100, query, resolve);
+    }
+  }
+
+  // [SM] Settings Menu
+
+  function addSmButton() {
     const navigation = document.querySelector(`.nav-pills`);
     navigation.insertAdjacentHTML(`beforeEnd`, `
       <li>
@@ -85,13 +172,13 @@
       </li>
     `);
     const button = navigation.lastElementChild;
-    button.addEventListener(`click`, () => loadSettings(button, navigation));
+    button.addEventListener(`click`, () => loadSmMenu(button, navigation));
     if (window.location.href.match(/#enhancedBlaeo/)) {
-      loadSettings(button, navigation);
+      loadSmMenu(button, navigation);
     }
   }
 
-  function loadSettings(button, navigation) {
+  function loadSmMenu(button, navigation) {
     window.location.hash = `#enhancedBlaeo`;
     navigation.querySelector(`.active`).classList.remove(`active`);
     button.classList.add(`active`);
@@ -117,11 +204,11 @@
     `;
     const steamApiKeyInput = element.firstElementChild.firstElementChild.nextElementSibling;
     const saveButton = steamApiKeyInput.nextElementSibling.firstElementChild;
-    const usernameElement = element.lastElementChild.firstElementChild.firstElementChild.firstElementChild;
+    const usernameElement = element.lastElementChild.firstElementChild.nextElementSibling.firstElementChild;
     const ownedGamesElement = usernameElement.nextElementSibling;
     const lastSyncElement = element.lastElementChild.lastElementChild.previousElementSibling.firstElementChild.firstElementChild;
     const syncButton = element.lastElementChild.lastElementChild.firstElementChild;
-    lastSyncElement.textContent = settings.lastSync ? new Date(lastSync).toLocaleString() : `never`;
+    lastSyncElement.textContent = settings.lastSync ? new Date(settings.lastSync).toLocaleString() : `never`;
     saveButton.addEventListener(`click`, () => saveSettings(saveButton, steamApiKeyInput.value));
     syncButton.addEventListener(`click`, () => sync(syncButton, usernameElement, ownedGamesElement, lastSyncElement));
   }
@@ -135,7 +222,7 @@
       await GM.setValue(`username`, settings.username);
     }
     if (!settings.steamId) {
-      const dom = (await monkeyRequest.send(`/users/${settings.username}`)).dom;
+      const dom = (await monkeyRequest.send(`${url}/users/${settings.username}`)).dom;
       if (dom) {
         settings.steamId = dom.querySelector(`.btn-profile`).getAttribute(`href`).match(/\/profiles\/(.+?)$/)[1];
         await GM.setValue(`steamId`, settings.steamId);
@@ -145,6 +232,10 @@
   }
 
   async function sync(syncButton, usernameElement, ownedGamesElement, lastSyncElement) {
+    if (!settings.steamApiKey) {
+      window.alert(`You must set a Steam API key first!`);
+      return;
+    }
     syncButton.textContent = `Syncing...`;
     await syncOwnedGames();
     usernameElement.textContent = settings.username;
@@ -180,9 +271,11 @@
     return `${date.getFullYear()}-${`0${date.getMonth() + 1}`.slice(-2)}`;
   }
 
+  // [TLC] Theme List Checker
+
   async function getTlcList() {
     const currentMonth = getCurrentMonth();
-    const dom = (await monkeyRequest.send(`/themes/${currentMonth}`)).dom;
+    const dom = (await monkeyRequest.send(`${url}/themes/${currentMonth}`)).dom;
     if (dom) {
       const list = dom.querySelector(`[id*="theme-list"]`);
       if (list) {
@@ -200,7 +293,7 @@
     const elements = document.querySelectorAll(`.panel-default [href*="store.steampowered.com/app/"], .panel-default [href*="store.steampowered.com/sub/"]`);
     const games = {};
     for (const element of elements) {
-      const id = parseInt(element.getAttribute(`href`).match(/store\.steampowered\.com\/(app|sub)\/(\d+)/)[1]);
+      const id = parseInt(element.getAttribute(`href`).match(/store\.steampowered\.com\/(app|sub)\/(\d+)/)[2]);
       if (settings.tlcGames.indexOf(id) < 0) {
         settings.tlcGames.push(id);
         tagTlcNew(element);
@@ -210,7 +303,7 @@
       }
       games[id] = element;
     }
-    await GM.setValue(`tlcGames`, settings.tlcGames);
+    await GM.setValue(`tlcGames`, JSON.stringify(settings.tlcGames));
     await tagTlcStatus(`rgb(92 ,184, 92)`, games, `Beaten`);
     await tagTlcStatus(`rgb(91, 192, 222)`, games, `Completed`);
     document.querySelector(`[id*="counter"]`).innerHTML = `
@@ -233,7 +326,7 @@
   }
 
   async function tagTlcStatus(color, games, status) {
-    const dom = (await monkeyRequest.send(`/users/${settings.username}/games/${status.toLowerCase()}`)).dom;
+    const dom = (await monkeyRequest.send(`${url}/users/${settings.username}/games/${status.toLowerCase()}`)).dom;
     if (dom) {
       const elements = dom.querySelectorAll(`.steam`);
       const ids = new Set();
