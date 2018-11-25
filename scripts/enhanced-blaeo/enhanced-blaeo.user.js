@@ -16,7 +16,7 @@
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/DomParser.js
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/Request.js
 // @run-at document-idle
-// @version 3.0.0
+// @version 3.0.1
 // ==/UserScript==
 
 (() => {
@@ -29,7 +29,7 @@
   init();
 
   async function init() {
-    await setDefaultValues();console.log(settings, isInBlaeo);
+    await setDefaultValues();
     if (isInBlaeo) {
       document.addEventListener(`turbolinks:load`, loadFeatures);
     }
@@ -165,9 +165,13 @@
   // [SM] Settings Menu
 
   function addSmButton() {
+    const oldNavigation = document.querySelector(`#enhanced-blaeo`);
+    if (oldNavigation) {
+      oldNavigation.remove();
+    }
     const navigation = document.querySelector(`.nav-pills`);
     navigation.insertAdjacentHTML(`beforeEnd`, `
-      <li>
+      <li id="enhanced-blaeo">
         <a href="#enhancedBlaeo">Enhanced BLAEO</a>
       </li>
     `);
