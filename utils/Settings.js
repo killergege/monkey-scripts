@@ -45,9 +45,10 @@ const monkeySettings = {
           } else {
             value = prompt(`${this.name} Settings\n\n${option.message} Type ${option.values.map(x => x.template.replace(/%/, x.key)).join(` or `)}.`);
             value = option.values.filter(x => x.key === value)[0];
+            value = value && value.value;
           }
-        } while (!value);
-        this.settings[option.id] = value.value;
+        } while (typeof value === `undefined`);
+        this.settings[option.id] = value;
       }
     }
     await this.set(this.namespace, this.settings);
