@@ -12,14 +12,14 @@ const monkeySettings = {
   namespace: GM.info.script.namespace,
 
   async init(options) {
-    this.url = GM.info.script.matches[0].replace(/\*/, this.namespace);
+    this.url = GM.info.script.matches[0].replace(/\*/, `?${this.namespace}=settings`);
     this.settings = JSON.parse(await this.get(this.namespace, `{}`));
     this.options = options;
     await this.check();
   },
 
   async check() {
-    if (!Object.keys(this.settings)) {
+    if (!Object.keys(this.settings).length) {
       await this.open(true);
     } else if (window.location.search === `?${this.namespace}=settings`) {
       await this.open();
@@ -58,7 +58,7 @@ const monkeySettings = {
       return GM.getValue(key, defaultValue);
     } else {
       return window.localStorage[key] || defaultValue;
-    }    
+    }
   },
 
   set(key, value) {

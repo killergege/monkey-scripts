@@ -1,12 +1,10 @@
 const monkeyMutationObserver = (() => {
-  function process(mutations) {
+  function process(mutations, callback) {
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
         try {
           callback(node);
-        } catch (error) {
-          console.log(error);
-        }
+        } catch (error) { }
       }
     }
   }
