@@ -44,6 +44,7 @@
       username: `Username`,
       lastSync: `LastSync`,
       ownedGames: `OwnedGames`,
+      pgPresets: ``,
       tlcCurrentMonth: `TLCCurrentMonth`,
       tlcGames: `TLCGames`,
       tlcList: `TLCList`
@@ -55,19 +56,20 @@
       username: `?`,
       lastSync: 0,
       ownedGames: [],
+      pgPresets: [],
       tlcCurrentMonth: ``,
       tlcGames: [],
       tlcList: ``
     };
     for (const key in defaultValues) {
       if (typeof (await GM.getValue(key)) === `undefined`) {
-        if (key === `ownedGames` || key === `tlcGames`) {
+        if (Array.isArray(defaultValues[key])) {
           await GM.setValue(key, JSON.stringify(await GM.getValue(oldValues[key], defaultValues[key])));
         } else {
           await GM.setValue(key, await GM.getValue(oldValues[key], defaultValues[key]));
         }
       }
-      if (key === `ownedGames` || key === `tlcGames`) {
+      if (Array.isArray(defaultValues[key])) {
         settings[key] = JSON.parse(await GM.getValue(key));
       } else {
         settings[key] = await GM.getValue(key);
@@ -85,6 +87,8 @@
         addAtUser();
       } else if (window.location.href.match(/\/settings\//)) {
         addSmButton();
+      } else if (window.location.href.match(/\/posts\/new/)) {
+        addPgButton();
       }
       if (settings.steamApiKey) {
         if (!settings.tlcList || (settings.tlcCurrentMonth !== getCurrentMonth())) {
@@ -273,6 +277,614 @@
   function getCurrentMonth() {
     const date = new Date();
     return `${date.getFullYear()}-${`0${date.getMonth() + 1}`.slice(-2)}`;
+  }
+
+  // [PG] Post Generator
+
+  async function addPgButton() {
+    const element = document.querySelector(`.pull-right`);
+    element.insertAdjacentHTML(`afterEnd`, `
+			<button class="btn btn-default pull-right" data-toggle="modal" data-target="#post-generator" style="margin-right: 5px;" type="button">Generate</button>
+    `);
+    document.body.insertAdjacentHTML(`beforeEnd`, `
+			<div class="modal fade" id="post-generator" role="dialog" tabindex="-1">
+  			<div class="modal-dialog modal-lg" role="document">
+    			<div class="modal-content">
+      			<div class="modal-header">
+              <button aria-label="Close" class="close" data-dismiss="modal" type="button">
+                <span aria-hidden="true">&times;</span>
+              </button>
+        			<h4 class="modal-title">Post Generator</h4>
+      			</div>
+      			<div class="modal-body">
+							<div class="form-group">
+								<input class="form-control" data-target="#search-results" id="filter-games" placeholder="Start typing to search for games …" type="text">
+							</div>
+							<div id="search-results"></div>
+              <div class="panel panel-default" style="display: none;">
+                <div class="panel-heading">Generator</div>
+                <div class="panel-body" id="generator"></div>
+							</div>
+              <div class="panel panel-default" style="display: none;">
+                <div class="panel-heading">Result</div>
+                <div class="panel-body" id="generator-result"></div>
+                <p style="margin-left: 10px;">Reordering games is currently not possible.</p>
+              </div>
+						</div>
+            <div class="modal-footer">
+              <button class="btn btn-default" data-dismiss="modal" type="button">Close</button>
+              <button class="btn btn-primary" data-dismiss="modal" id="generate-button" type="button">Generate</button>
+            </div>
+      		</div>
+    		</div>
+  		</div>
+		`);
+    const items = {
+      cache: JSON.parse(window.localStorage.enhancedBlaeo_pg || `[]`),
+      toSave: [`<ul class="games">`, `</ul>`],
+      toShow: [`<ul class="games">`, `</ul>`]
+    };
+    const textAreaElement = document.querySelector(`#post_text`);
+    document.querySelector(`#filter-games`).addEventListener(`input`, () => onPgSearchInput(items));
+    document.querySelector(`#generate-button`).addEventListener(`click`, () => textAreaElement.value = `${textAreaElement.value}\n\n${items.toSave.join(``).replace(/\s+/g, ` `)}\n\n`);
+    element.addEventListener(`click`, () => delete window.localStorage.enhancedBlaeo_pg);
+    if (items.cache.length) {
+      for (const info of items.cache) {
+        if (info) {
+          await generatePgGame(null, info, items);
+        }
+      }
+    }
+  }
+
+  async function onPgSearchInput(items) {
+    if (!settings.steamApiKey) {
+      alert(`You must set a Steam API key in the settings menu!`);
+      return;
+    }
+    const searchResultsElement = document.querySelector(`#search-results`);
+    const text = (await monkeyRequest.send(`${url}/users/${settings.username}/games/filter?q=${document.querySelector(`#filter-games`).value}&exclude=vbyypyb`)).text;
+    searchResultsElement.innerHTML = text;
+    const elements = searchResultsElement.querySelectorAll(`.game`);
+    for (const element of elements) {
+      element.insertAdjacentHTML(`beforeEnd`, `
+			  <button class="btn btn-default" style="margin-bottom: 5px;" type="button">Select</button>
+      `);
+      element.lastElementChild.addEventListener(`click`, () => selectPgGame(element, null, items, 0));
+    }
+  }
+
+  function selectPgGame(element, info, items, itemsIndex) {
+    if (!info) {
+      const titleElement = element.querySelector(`.title`);
+      const captionElement = element.querySelector(`.caption`);
+      info = {
+        code: element.getAttribute(`data-item`),
+        state: element.className.match(/game-(?!thumbnail)(.+?)(\s|$)/)[1],
+        image: element.querySelector(`img`).getAttribute(`src`),
+        title: titleElement.textContent.trim(),
+        id: titleElement.nextElementSibling.getAttribute(`href`).match(/\d+/)[0],
+        playtime: captionElement.firstElementChild.textContent.trim(),
+        achievements: captionElement.lastElementChild.textContent.trim(),
+        format: `box`,
+        boxReviewPosition: `Left`,
+        panelRating: ``,
+        panelUsePredefinedBackground: true,
+        panelPredefinedBackground: `Blue`,
+        panelUseCustomBackground: false,
+        panelCustomBackground: ``,
+        panelUseCollapsibleReview: false,
+        barBackgroundType: `Solid`,
+        barBackground1: ``,
+        barBackground2: ``,
+        barImagePosition: `Left`,
+        barCompletionBarPosition: `Left`,
+        barTitleColor: `#ffffff`,
+        barTextColor: `#ffffff`,
+        barCustomText: ``,
+        barUseCollapsibleReview: false,
+        barReviewTriggerMethod: `Bar Click`,
+        customHtml: ``,
+        review: ``,
+        presetName: ``
+      };
+    }
+    document.querySelector(`#filter-games`).value = ``;
+    document.querySelector(`#search-results`).innerHTML = ``;
+    const generatorElement = document.querySelector(`#generator`);
+    generatorElement.parentElement.style.display = `block`;
+    generatorElement.innerHTML = `
+      <div>
+        <p>These templates are replaced with info about the game:</p>
+        <ul>
+          <li><b>%state%</b> - The state of the game (beaten, completed, never-played, unfinished or wont-play)</li>
+          <li><b>%image%</b> - The URL of the game image.</li>
+          <li><b>%title%</b> - The title of the game.</li>
+          <li><b>%id%</b> - The Steam appid of the game.</li>
+          <li><b>%playtime%</b> - Your playtime.</li>
+          <li><b>%achievements%</b> - Your achievements.</li>
+        </ul>
+        <div class="dropdown">
+          <button aria-expanded="false" aria-haspopup="true" data-toggle="dropdown" id="apply-preset-button" type="button">
+            Apply Preset
+            <span class="caret"></span>
+          </button>
+          <ul aria-labelledby="apply-preset-button" class="dropdown-menu">
+            ${settings.pgPresets.length > 0 ? settings.pgPresets.map(x => `
+              <li>
+                <a style="cursor: pointer;">${x.name}</a>
+              </li>
+            `).join(``) : `
+              <p>No presets saved.</p>
+            `}
+          </ul>
+        </div>
+        <br>
+        <p>Deleting presets is currently not possible.</p>
+        <br>
+        <ul class="nav nav-tabs" id="generator-nav" role="tablist">
+          <li ${info.format === `box` ? `class="active"` : ``} data-format="box" role="presentation">
+						<a aria-controls="box" data-toggle="tab" href="#box" role="tab">Box</a>
+					</li>
+          <li ${info.format === `panel` ? `class="active"` : ``} data-format="panel" role="presentation">
+						<a aria-controls="panel" data-toggle="tab" href="#panel" role="tab">Panel</a>
+					</li>
+          <li ${info.format === `bar` ? `class="active"` : ``} data-format="bar" role="presentation">
+						<a aria-controls="bar" data-toggle="tab" href="#bar" role="tab">Bar</a>
+					</li>
+          <li ${info.format === `custom` ? `class="active"` : ``} data-format="custom" role="presentation">
+						<a aria-controls="custom" data-toggle="tab" href="#custom" role="tab">Custom</a>
+					</li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane ${info.format === `box` ? `active` : ``}" id="box" role="tabpanel">
+            <div class="form-group">
+              <label for="box-review-position">Review Position:</label>
+              <select class="form-control" id="box-review-position">
+                <option ${info.boxReviewPosition === `Left` ? `selected` : ``}">Left</option>
+                <option ${info.boxReviewPosition === `Right` ? `selected` : ``}">Right</option>
+              </select>
+            </div>
+					</div>
+          <div class="tab-pane ${info.format === `panel` ? `active` : ``}" id="panel" role="tabpanel">
+            <div class="form-group">
+              <label for="panel-rating">Rating:</label>
+              <input class="form-control" id="panel-rating" type="text" value="${info.panelRating}">
+              <div class="radio">
+                <label>
+                  <input ${info.panelUsePredefinedBackground ? `checked` : ``} id="panel-use-predefined-background" name="optradio" type="radio">Use Predefined Background
+                </label>
+              </div>
+              <label for="panel-predefined-background">Predefined Background Color:</label>
+              <select class="form-control" id="panel-predefined-background">
+                <option ${info.panelPredefinedBackground === `Blue` ? `selected` : ``}>Blue</option>
+                <option ${info.panelPredefinedBackground === `Green` ? `selected` : ``}>Green</option>
+                <option ${info.panelPredefinedBackground === `Grey` ? `selected` : ``}>Grey</option>
+                <option ${info.panelPredefinedBackground === `Red` ? `selected` : ``}>Red</option>
+                <option ${info.panelPredefinedBackground === `Yellow` ? `selected` : ``}>Yellow</option>
+              </select>
+              <div class="radio">
+                <label>
+                  <input ${info.panelUseCustomBackground ? `checked` : ``} id="panel-use-custom-background" name="optradio" type="radio">Use Custom Background
+                </label>
+              </div>
+              <label for "panel-custom-background">Custom Background Color:</label>
+              <input class="form-control" id="panel-custom-background" type="color" value="${info.panelCustomBackground}">
+              <div class="checkbox">
+                <label><input ${info.panelUseCollapsibleReview ? `checked` : ``} id="panel-use-collapsible-review" type="checkbox">Use collapsible review.</label>
+              </div>
+            </div>
+          </div>
+          <div class="tab-pane ${info.format === `bar` ? `active` : ``}" id="bar" role="tabpanel">
+            <div class="form-group">
+              <label for="bar-background-type">Background Type:</label>
+              <select class="form-control" id="bar-background-type">
+                <option ${info.barBackgroundType === `Solid` ? `selected` : ``}>Solid</option>
+                <option ${info.barBackgroundType === `Horizontal Gradient` ? `selected` : ``}>Horizontal Gradient</option>
+                <option ${info.barBackgroundType === `Vertical Gradient` ? `selected` : ``}>Vertical Gradient</option>
+              </select>
+              <label for "bar-background-1">Background Color 1:</label>
+              <input class="form-control" id="bar-background-1" type="color" value="${info.barBackground1}">
+              <label for "bar-background-2">Background Color 2:</label>
+              <input class="form-control" id="bar-background-2" type="color" value="${info.barBackground2}">
+              <label for="bar-image-position">Image Position:</label>
+              <select class="form-control" id="bar-image-position">
+                <option ${info.barImagePosition === `Left` ? `selected` : ``}>Left</option>
+                <option ${info.barImagePosition === `Right` ? `selected` : ``}>Right</option>
+              </select>
+              <label for="bar-completion-bar-position">Completion Bar Position:</label>
+              <select class="form-control" id="bar-completion-bar-position">
+                <option ${info.barCompletionBarPosition === `Left` ? `selected` : ``}>Left</option>
+                <option ${info.barCompletionBarPosition === `Right` ? `selected` : ``}>Right</option>
+                <option ${info.barCompletionBarPosition === `Hidden` ? `selected` : ``}>Hidden</option>
+              </select>
+              <label for "bar-title-color">Title Color:</label>
+              <input class="form-control" id="bar-title-color" type="color" value="${info.barTitleColor}">
+              <label for "bar-text-color">Text Color</label>
+              <input class="form-control" id="bar-text-color" type="color" value="${info.barTextColor}">
+              <label for="panel-rating">Custom Text:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="bar-custom-text" type="text" value="${info.barCustomText}">
+              <label for="bar-review-trigger-method">Review Trigger Method:</label>
+              <div class="checkbox">
+                <label><input ${info.barUseCollapsibleReview ? `checked` : ``} id="bar-use-collapsible-review" type="checkbox">Use collapsible review.</label>
+              </div>
+              <select class="form-control" id="bar-review-trigger-method">
+                <option ${info.barReviewTriggerMethod === `Bar Click` ? `selected` : ``}>Bar Click</option>
+                <option ${info.barReviewTriggerMethod === `Button Click` ? `selected` : ``}>Button Click</option>
+              </select>
+            </div>
+          </div>
+          <div class="tab-pane ${info.format === `custom` ? `active` : ``}" id="custom" role="tabpanel">
+            <div class="form-group">
+              <label for="custom-html">HTML:</label>
+              <p>You can use templates here. Additionally, use %review% to define where you want the review to appear.</p>
+              <p>Add your custom HTML here. You can use the templates described at the top.</p>
+              <textarea class="form-control" id="custom-html" rows="5">${info.customHtml}</textarea>
+            </div>
+          </div>
+        </div>
+				<div class="form-group">
+          <label for="review">Review:</label>
+          <p>You can use templates here.</p>
+          <textarea class="form-control" id="review" rows="5">${info.review}</textarea>
+        </div>
+        <div class="form-group">
+          <label for="preset-name">Preset Name:</label>
+          <p>Save these settings as a preset to quickly reuse later.</p>
+          <input class="form-control" id="preset-name" type="text" value="${info.presetName || ``}">
+        </div>
+        <button class="btn btn-default" id="preset-button" type="button">Save Preset</button>
+        <br>
+        <br>
+      </div>
+      <div class="panel panel-default" style="display: none;">
+        <div class="panel-heading">Preview</div>
+        <div class="panel-body" id="generator-preview"></div>
+      </div>
+      <button class="btn btn-primary pull-right" id="generator-button" type="button">${itemsIndex ? `Edit` : `Add`}</button>
+		`;
+    const dropdownElements = generatorElement.querySelectorAll(`.dropdown-menu li`);
+    for (const dropdownElement of dropdownElements) {
+      dropdownElement.addEventListener(`click`, () => applyPgPreset(info, items, dropdownElement.textContent));
+    }
+    document.querySelector(`.nav-tabs`).addEventListener(`click`, () => generatePgGame(generatorElement, info));
+    const tabElements = generatorElement.querySelectorAll(`#generator-nav a[data-toggle="tab"]`);
+    for (const tabElement of tabElements) {
+      tabElement.addEventListener(`click`, () => setTimeout(() => generatePgGame(generatorElement, info), 1000), true);
+    }
+    const controlElements = generatorElement.querySelectorAll(`input, select, textarea`);
+    for (const controlElement of controlElements) {
+      controlElement.addEventListener(`change`, () => generatePgGame(generatorElement, info));
+    }
+    const presetButton = document.querySelector(`#preset-button`);
+    presetButton.addEventListener(`click`, () => savePgPreset(info));
+    document.querySelector(`#generator-button`).addEventListener(`click`, () => generatePgGame(generatorElement, info, items, itemsIndex));
+    generatePgGame(generatorElement, info);
+  }
+
+  function applyPgPreset(info, items, name) {
+    const preset = settings.pgPresets.filter(x => x.name === name)[0];
+    if (preset) {
+      info.presetName = preset.name;
+      info.format = preset.format;
+      info.review = preset.review;
+      switch (preset.format) {
+        case `box`:
+          info.boxReviewPosition = preset.boxReviewPosition;
+          break;
+        case `panel`:
+          info.panelRating = preset.panelRating;
+          info.panelUsePredefinedBackground = preset.panelUsePredefinedBackground;
+          info.panelPredefinedBackground = preset.panelPredefinedBackground;
+          info.panelUseCustomBackground = preset.panelUseCustomBackground;
+          info.panelCustomBackground = preset.panelCustomBackground;
+          info.panelUseCollapsibleReview = preset.panelUseCollapsibleReview;
+          break;
+        case `bar`:
+          info.barBackgroundType = preset.barBackgroundType;
+          info.barBackground1 = preset.barBackground1;
+          info.barBackground2 = preset.barBackground2;
+          info.barImagePosition = preset.barImagePosition;
+          info.barCompletionBarPosition = preset.barCompletionBarPosition;
+          info.barTitleColor = preset.barTitleColor;
+          info.barTextColor = preset.barTextColor;
+          info.barCustomText = preset.barCustomText;
+          info.barUseCollapsibleReview = preset.barUseCollapsibleReview;
+          info.barReviewTriggerMethod = preset.barReviewTriggerMethod;
+          break;
+        case `custom`:
+          info.customHtml = preset.customHtml;
+      }
+      selectPgGame(null, info, items);
+    }
+  }
+
+  async function generatePgGame(generatorElement, info, items, itemsIndex) {
+    if (generatorElement) {
+      info.format = generatorElement.querySelector(`.active`).getAttribute(`data-format`);
+      info.review = document.querySelector(`#review`).value;
+    }
+    const completionColors = {
+      'beaten': `#5cb85c`,
+      'completed': `#5bc0de`,
+      'never-played': `#eeeeee`,
+      'unfinished': `#f0ad4e`,
+      'wont-play': `#d9534f`
+    };
+    const panelColors = {
+      Blue: `info`,
+      Green: `success`,
+      Grey: `default`,
+      Red: `danger`,
+      Yellow: `warning`
+    };
+    const reviewPreview = info.review ? (await previewText(applyPgTemplate(info, info.review))).dom.querySelector(`.markdown`).outerHTML : ``;
+    let html = ``;
+    switch (info.format) {
+      case `box`: {
+        if (generatorElement) {
+          info.boxReviewPosition = document.querySelector(`#box-review-position`).value;
+        }
+        html = `
+					<li class="game game-thumbnail game-${info.state}">
+						<div class="title">${info.title}</div>
+						<a href="https://store.steampowered.com/app/${info.id}/" target="_blank">
+							<img alt="${info.title}" src="${info.image}">
+						</a>
+						<div class="caption">
+							<p>${info.playtime}</p>
+							<p>${info.achievements}</p>
+						</div>
+					</li>
+				`;
+        if (info.review) {
+          const box = `<span style="flex-shrink: 0;">${html}</span>`;
+          const review = `<span style="font-size: 14px; width: 100%;">${reviewPreview}</span>`;
+          html = `
+            <div style="display: flex; justify-content: space-between;">
+              ${info.boxReviewPosition === `Left` ? `
+                ${review}${box}
+              ` : `
+                ${box}${review}
+              `}
+            </div>
+          `;
+        }
+        break;
+      }
+      case `panel`: {
+        if (generatorElement) {
+          info.panelRating = document.querySelector(`#panel-rating`).value;
+          info.panelUsePredefinedBackground = document.querySelector(`#panel-use-predefined-background`).checked;
+          info.panelPredefinedBackground = document.querySelector(`#panel-predefined-background`).value;
+          info.panelUseCustomBackground = document.querySelector(`#panel-use-custom-background`).checked;
+          info.panelCustomBackground = document.querySelector(`#panel-custom-background`).value;
+          info.panelUseCollapsibleReview = document.querySelector(`#panel-use-collapsible-review`).checked;
+        }
+        html = `
+					<div class="panel ${info.panelUsePredefinedBackground ? `panel-${panelColors[info.panelPredefinedBackground]}` : ``}" style="${info.panelUseCustomBackground ? `border-color: ${info.panelCustomBackground};` : ``} font-size: 14px;">
+						<div class="panel-heading" ${info.review && info.panelUseCollapsibleReview ? `data-target="#review-${settings.username}-${info.id}" data-toggle="collapse"` : ``} style="${info.panelUseCustomBackground ? `background-color: ${info.panelCustomBackground};` : ``} display: flex; position: relative;">
+							<div style="border-left: 10px solid ${completionColors[info.state]}; padding-right: 10px;">
+								<img alt="${info.title}" src="https://steamcdn-a.akamaihd.net/steam/apps/${info.id}/header.jpg" style="max-height: 90px; max-width: none; min-height: 90px; width: 192.55px;">
+							</div>
+							<div class="media-body">
+								<h4 class="media-heading">
+									${info.title}
+									<a href="https://store.steampowered.com/app/${info.id}" target="_blank">
+                    <font size="2px">
+                      <i aria-hidden="true" class="fa fa-external-link"></i>
+                    </font>
+									</a>
+								</h4>
+								${info.panelRating ? `
+									<div>
+										<i aria-hidden="true" class="fa fa-star"></i> ${info.panelRating}
+									</div>
+								` : ``}
+								<div>
+									<i aria-hidden="true" class="fa fa-clock-o"></i> ${info.playtime}
+								</div>
+								<span>
+									<i aria-hidden="true" class="fa fa-trophy"></i> ${info.achievements}
+                </span>
+                ${info.review && info.panelUseCollapsibleReview ? `
+                  <div aria-expanded="false" class="collapsed" style="bottom: 10px; position: absolute; right: 10px;">More <i class="fa fa-level-down"></i></div>
+                ` : ``}
+							</div>
+            </div>
+            ${info.review ?
+            info.panelUseCollapsibleReview ? `
+                <div class="collapse" id="review-${settings.username}-${info.id}" style="padding: 10px 20px; width: 100%;">${reviewPreview}</div>
+              ` : `
+                <div style="padding: 10px 20px; width: 100%;">${reviewPreview}</div>
+              `
+            : ``}
+					</div>
+				`;
+        break;
+      }
+      case `bar`: {
+        if (generatorElement) {
+          info.barBackgroundType = document.querySelector(`#bar-background-type`).value;
+          info.barBackground1 = document.querySelector(`#bar-background-1`).value;
+          info.barBackground2 = document.querySelector(`#bar-background-2`).value;
+          info.barImagePosition = document.querySelector(`#bar-image-position`).value;
+          info.barCompletionBarPosition = document.querySelector(`#bar-completion-bar-position`).value;
+          info.barTitleColor = document.querySelector(`#bar-title-color`).value;
+          info.barTextColor = document.querySelector(`#bar-text-color`).value;
+          info.barCustomText = document.querySelector(`#bar-custom-text`).value;
+          info.barUseCollapsibleReview = document.querySelector(`#bar-use-collapsible-review`).checked;
+          info.barReviewTriggerMethod = document.querySelector(`#bar-review-trigger-method`).value;
+        }
+        const image = `
+          <a href="https://store.steampowered.com/app/${info.id}/" target="_blank">
+            <img src="${info.image}" style="max-width: none;">
+          </a>
+        `;
+        const details = `
+          <div style="padding-left: 5px; width: 100%;">
+            <h2 style="color: ${info.barTitleColor}; font-size: 22px; margin: 0; padding-top: 5px;">${info.title}</h2>
+            <p style="color: ${info.barTextColor}; font-size: 10px; margin-bottom: 0; padding-bottom: 5px;">${info.playtime}, ${info.achievements}<br>${applyPgTemplate(info, info.barCustomText)}</p>
+          </div>
+        `;
+        html = `
+          <div ${info.review && info.barUseCollapsibleReview && info.barReviewTriggerMethod === `Bar Click` ? `data-target="#review-${settings.username}-${info.id}" data-toggle="collapse"` : ``} style="${info.barBackgroundType === `Solid` ? `background-color: ${info.barBackground1};` : `background: linear-gradient(to ${info.barBackgroundType === `Horizontal Gradient` ? `right` : `bottom`}, ${info.barBackground1}, ${info.barBackground2});`} ${info.barCompletionBarPosition === `Hidden` ? `` : `border-${info.barCompletionBarPosition.toLowerCase()}: 10px solid ${completionColors[info.state]};`} ${info.review && info.barUseCollapsibleReview && info.barReviewTriggerMethod === `Bar Click` ? `cursor: pointer;` : ``} font-size: 14px; position: relative; text-shadow: 1px 1px 0 black;">
+            <div style="display: flex; justify-content: space-between;">
+              ${info.barImagePosition === `Left` ? `
+                ${image}${details}
+              ` : `
+                ${details}${image}
+              `}
+            </div>
+            ${info.review && info.barUseCollapsibleReview && info.barReviewTriggerMethod === `Button Click` ? `
+              <div data-target="#review-${settings.username}-${info.id}" data-toggle="collapse" style="background-color: #aaaaaa; border-radius: 8px; bottom: -15px; color: #ffffff; cursor: pointer; height: 22px; left: 0; margin: 0 auto; position: absolute; right: 0; text-align: center; width: 150px; z-index: 1;">
+                <h2 style="font-size: 16px; line-height: 16px; margin: 0; padding-top: 2px;">
+                  More <i class="fa fa-level-down"></i>
+                </h2>
+              </div>
+            ` : ``}
+          </div>
+          ${info.review ?
+            info.barUseCollapsibleReview ? `
+              <div class="collapse" id="review-${settings.username}-${info.id}" style="border: 1px solid #dee2e6; border-radius: 2px; border-top: 0; font-size: 14px; padding: ${info.barReviewTriggerMethod === `Bar Click` ? `10px 20px 0px 20px` : `15px 20px 0px`}; width: 100%;">${reviewPreview}</div>
+            ` : `
+              <div style="border: 1px solid #dee2e6; border-radius: 2px; border-top: 0; padding: 10px 20px; width: 100%;">${reviewPreview}</div>
+            `
+            : ``}
+        `;
+        break;
+      }
+      case `custom`: {
+        if (generatorElement) {
+          info.customHtml = document.querySelector(`#custom-html`).value;
+        }
+        html = applyPgTemplate(info, info.customHtml).replace(/%review%/g, reviewPreview);
+        break;
+      }
+    }
+    if (generatorElement) {
+      const generatorPreview = document.querySelector(`#generator-preview`);
+      generatorPreview.parentElement.style.display = `block`;
+      generatorPreview.innerHTML = `
+        <ul class="games">${html}</ul>
+      `;
+    }
+    if (items) {
+      const htmlToShow = `
+        <span data-info="${escapeHtml(JSON.stringify(info))}" data-items-index="${items.toSave.length - 1}">${html}</span>
+        <div class="btn-toolbar" style="margin: 10px 0 10px">
+          <button class="btn btn-default edit" type="button">Edit</button>
+          <button class="btn btn-default remove" type="button">Remove</button>
+        </div>
+      `;
+      if (itemsIndex) {
+        items.cache[itemsIndex - 1] = info;
+        items.toSave[itemsIndex] = html;
+        items.toShow[itemsIndex] = htmlToShow;
+      } else {
+        itemsIndex = items.toSave.length - 1;
+        if (generatorElement) {
+          items.cache.push(info);
+        }
+        items.toSave.splice(itemsIndex, 0, html);
+        items.toShow.splice(itemsIndex, 0, htmlToShow);
+      }
+      if (generatorElement) {
+        window.localStorage.enhancedBlaeo_pg = JSON.stringify(items.cache);
+      }
+      const generatorResult = document.querySelector(`#generator-result`);
+      generatorResult.parentElement.style.display = `block`;
+      generatorResult.innerHTML = items.toShow.join(``);
+      const editButtons = generatorResult.querySelectorAll(`.edit`);
+      for (const button of editButtons) {
+        button.addEventListener(`click`, () => selectPgGame(null, JSON.parse(button.parentElement.previousElementSibling.getAttribute(`data-info`)), items, parseInt(button.parentElement.previousElementSibling.getAttribute(`data-items-index`))));
+      }
+      const removeButtons = generatorResult.querySelectorAll(`.remove`);
+      for (const button of removeButtons) {
+        button.addEventListener(`click`, () => removePgGame(button, items));
+      }
+    }
+  }
+
+  function previewText(text) {
+    const body = `authenticity_token=${document.querySelector(`[name="authenticity_token"]`).value}&utf8=${document.querySelector(`[name="utf8"]`).value}&post[text]=${encodeURIComponent(text)}`;
+    return monkeyRequest.send(`${url}/posts/preview.${settings.username}`, {
+      body,
+      headers: {
+        'Content-Type': `application/x-www-form-urlencoded; charset=UTF-8`,
+        'X-CSRF-Token': document.querySelector(`[name="csrf-token"]`).content
+      },
+      method: `POST`
+    });
+  }
+
+  function applyPgTemplate(info, text) {
+    return text
+      .replace(/%state%/g, info.state)
+      .replace(/%image%/g, info.image)
+      .replace(/%title%/g, info.title)
+      .replace(/%id%/g, info.id)
+      .replace(/%playtime%/g, info.playtime)
+      .replace(/%achievements%/g, info.achievements);
+  }
+
+  function escapeHtml(text) {
+    return text
+      .replace(/&/g, `&amp;`)
+      .replace(/</g, `&lt;`)
+      .replace(/>/g, `&gt;`)
+      .replace(/"/g, `&quot;`)
+      .replace(/'/g, `&#039;`);
+  }
+
+  function removePgGame(button, items) {
+    const index = parseInt(button.parentElement.previousElementSibling.getAttribute(`data-items-index`));
+    items.cache[index - 1] = null;
+    items.toSave[index] = ``;
+    items.toShow[index] = ``;
+    window.localStorage.enhancedBlaeo_pg = JSON.stringify(items.cache);
+    button.parentElement.previousElementSibling.remove();
+    button.parentElement.remove();
+  }
+
+  async function savePgPreset(info) {
+    const presetButton = document.querySelector(`#preset-button`);
+    presetButton.textContent = `Saving...`;
+    const name = document.querySelector(`#preset-name`).value || `UntitledPreset${settings.pgPresets.length + 1}`;
+    const preset = settings.pgPresets.filter(x => x.name === name)[0] || (settings.pgPresets.push({ name }) && settings.pgPresets[settings.pgPresets.length - 1]);
+    preset.format = info.format;
+    preset.review = info.review;
+    switch (preset.format) {
+      case `box`:
+        preset.boxReviewPosition = info.boxReviewPosition;
+        break;
+      case `panel`:
+        preset.panelRating = info.panelRating;
+        preset.panelUsePredefinedBackground = info.panelUsePredefinedBackground;
+        preset.panelPredefinedBackground = info.panelPredefinedBackground;
+        preset.panelUseCustomBackground = info.panelUseCustomBackground;
+        preset.panelCustomBackground = info.panelCustomBackground;
+        preset.panelUseCollapsibleReview = info.panelUseCollapsibleReview;
+        break;
+      case `bar`:
+        preset.barBackgroundType = info.barBackgroundType;
+        preset.barBackground1 = info.barBackground1;
+        preset.barBackground2 = info.barBackground2;
+        preset.barImagePosition = info.barImagePosition;
+        preset.barCompletionBarPosition = info.barCompletionBarPosition;
+        preset.barTitleColor = info.barTitleColor;
+        preset.barTextColor = info.barTextColor;
+        preset.barCustomText = info.barCustomText;
+        preset.barUseCollapsibleReview = info.barUseCollapsibleReview;
+        preset.barReviewTriggerMethod = info.barReviewTriggerMethod;
+        break;
+      case `custom`:
+        preset.customHtml = info.customHtml;
+    }
+    await GM.setValue(`pgPresets`, JSON.stringify(settings.pgPresets));
+    window.alert(`Preset saved!`);
+    presetButton.textContent = `Save Preset`;
   }
 
   // [TLC] Theme List Checker
