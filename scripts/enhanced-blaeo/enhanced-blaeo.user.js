@@ -16,7 +16,7 @@
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/DomParser.js
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/Request.js
 // @run-at document-idle
-// @version 3.0.1
+// @version 3.0.2
 // ==/UserScript==
 
 (() => {
@@ -282,6 +282,47 @@
   // [PG] Post Generator
 
   async function addPgButton() {
+    const defaultInfo = {
+      format: `box`,
+      boxAchievements: `%achievements_count% of %achievements_total% achievements`,
+      boxNoAchievements: `no achievements`,
+      boxLinkAchievements: true,
+      boxLinkScreenshots: false,
+      boxScreenshots: `%screenshots_count% screenshots`,
+      boxNoScreenshots: `no screenshots`,
+      boxReviewPosition: `Left`,
+      panelAchievements: `%achievements_count% of %achievements_total% achievements (%achievements_percentage%%)`,
+      panelNoAchievements: `no achievements`,
+      panelLinkAchievements: true,
+      panelLinkScreenshots: false,
+      panelScreenshots: `%screenshots_count% screenshots`,
+      panelNoScreenshots: `no screenshots`,
+      panelRating: ``,
+      panelUsePredefinedBackground: true,
+      panelPredefinedBackground: `Blue`,
+      panelUseCustomBackground: false,
+      panelCustomBackground: ``,
+      panelUseCollapsibleReview: false,
+      barAchievements: `%achievements_count% of %achievements_total% achievements (%achievements_percentage%%)`,
+      barNoAchievements: `no achievements`,
+      barLinkAchievements: true,
+      barLinkScreenshots: false,
+      barScreenshots: `%screenshots_count% screenshots`,
+      barNoScreenshots: `no screenshots`,
+      barBackgroundType: `Solid`,
+      barBackground1: ``,
+      barBackground2: ``,
+      barImagePosition: `Left`,
+      barCompletionBarPosition: `Left`,
+      barTitleColor: `#ffffff`,
+      barTextColor: `#ffffff`,
+      barCustomText: ``,
+      barUseCollapsibleReview: false,
+      barReviewTriggerMethod: `Bar Click`,
+      customHtml: ``,
+      review: ``,
+      presetName: ``
+    };
     const element = document.querySelector(`.pull-right`);
     element.insertAdjacentHTML(`afterEnd`, `
 			<button class="btn btn-default pull-right" data-toggle="modal" data-target="#post-generator" style="margin-right: 5px;" type="button">Generate</button>
@@ -325,19 +366,19 @@
       toShow: [`<ul class="games">`, `</ul>`]
     };
     const textAreaElement = document.querySelector(`#post_text`);
-    document.querySelector(`#filter-games`).addEventListener(`input`, () => onPgSearchInput(items));
+    document.querySelector(`#filter-games`).addEventListener(`input`, () => onPgSearchInput(defaultInfo, items));
     document.querySelector(`#generate-button`).addEventListener(`click`, () => textAreaElement.value = `${textAreaElement.value}\n\n${items.toSave.join(``).replace(/\s+/g, ` `)}\n\n`);
     element.addEventListener(`click`, () => delete window.localStorage.enhancedBlaeo_pg);
     if (items.cache.length) {
       for (const info of items.cache) {
         if (info) {
-          await generatePgGame(null, info, items);
+          await generatePgGame(null, defaultInfo, info, items);
         }
       }
     }
   }
 
-  async function onPgSearchInput(items) {
+  async function onPgSearchInput(defaultInfo, items) {
     if (!settings.steamApiKey) {
       alert(`You must set a Steam API key in the settings menu!`);
       return;
@@ -350,15 +391,17 @@
       element.insertAdjacentHTML(`beforeEnd`, `
 			  <button class="btn btn-default" style="margin-bottom: 5px;" type="button">Select</button>
       `);
-      element.lastElementChild.addEventListener(`click`, () => selectPgGame(element, null, items, 0));
+      element.lastElementChild.addEventListener(`click`, () => selectPgGame(element, defaultInfo, null, items, 0));
     }
   }
 
-  function selectPgGame(element, info, items, itemsIndex) {
-    if (!info) {
+  function selectPgGame(element, defaultInfo, info, items, itemsIndex) {
+    if (info) {
+      info = Object.assign(defaultInfo, info);
+    } else {
       const titleElement = element.querySelector(`.title`);
       const captionElement = element.querySelector(`.caption`);
-      info = {
+      info = Object.assign({
         code: element.getAttribute(`data-item`),
         state: element.className.match(/game-(?!thumbnail)(.+?)(\s|$)/)[1],
         image: element.querySelector(`img`).getAttribute(`src`),
@@ -366,28 +409,7 @@
         id: titleElement.nextElementSibling.getAttribute(`href`).match(/\d+/)[0],
         playtime: captionElement.firstElementChild.textContent.trim(),
         achievements: captionElement.lastElementChild.textContent.trim(),
-        format: `box`,
-        boxReviewPosition: `Left`,
-        panelRating: ``,
-        panelUsePredefinedBackground: true,
-        panelPredefinedBackground: `Blue`,
-        panelUseCustomBackground: false,
-        panelCustomBackground: ``,
-        panelUseCollapsibleReview: false,
-        barBackgroundType: `Solid`,
-        barBackground1: ``,
-        barBackground2: ``,
-        barImagePosition: `Left`,
-        barCompletionBarPosition: `Left`,
-        barTitleColor: `#ffffff`,
-        barTextColor: `#ffffff`,
-        barCustomText: ``,
-        barUseCollapsibleReview: false,
-        barReviewTriggerMethod: `Bar Click`,
-        customHtml: ``,
-        review: ``,
-        presetName: ``
-      };
+      }, defaultInfo);
     }
     document.querySelector(`#filter-games`).value = ``;
     document.querySelector(`#search-results`).innerHTML = ``;
@@ -395,6 +417,11 @@
     generatorElement.parentElement.style.display = `block`;
     generatorElement.innerHTML = `
       <div>
+        <p>These templates are replaced with info about you:</p>
+        <ul>
+          <li><b>%steamid%</b> - Your Steam id.</li>
+          <li><b>%username%</b> - Your BLAEO username (this can be your SteamGifts or your Steam username depending on your BLAEO settings).</li>
+        </ul>
         <p>These templates are replaced with info about the game:</p>
         <ul>
           <li><b>%state%</b> - The state of the game (beaten, completed, never-played, unfinished or wont-play)</li>
@@ -402,7 +429,12 @@
           <li><b>%title%</b> - The title of the game.</li>
           <li><b>%id%</b> - The Steam appid of the game.</li>
           <li><b>%playtime%</b> - Your playtime.</li>
-          <li><b>%achievements%</b> - Your achievements.</li>
+          <li><b>%achievements%</b> - Your achievements in the format "X of Y achievements" or "no achievements".</li>
+          <li><b>%achievements_count%</b> - The number of achievements you have unlocked in the game.</li>
+          <li><b>%achievements_total%</b> - The total number of achievements in the game.</li>
+          <li><b>%achievements_percentage%</b> - The percentage of achievements you have unlocked in the game.</li>
+          <li><b>%screenshots%</b> - Your screenshots in the format "X screenshots" or "no screenshots" (if the option is enabled).</li>
+          <li><b>%screenshots_count%</b> - The number of screenshots you have taken in the game (if the option is enabled)</li>
         </ul>
         <div class="dropdown">
           <button aria-expanded="false" aria-haspopup="true" data-toggle="dropdown" id="apply-preset-button" type="button">
@@ -439,6 +471,24 @@
         <div class="tab-content">
           <div class="tab-pane ${info.format === `box` ? `active` : ``}" id="box" role="tabpanel">
             <div class="form-group">
+              <label for="box-achievements">Achievements Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="box-achievements" type="text" value="${info.boxAchievements || defaultInfo.boxAchievements}">
+              <label for="box-no-achievements">No Achievements Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="box-no-achievements" type="text" value="${info.boxNoAchievements || defaultInfo.boxNoAchievements}">
+              <div class="checkbox">
+                <label><input ${info.boxLinkAchievements ? `checked` : ``} id="box-link-achievements" type="checkbox">Link achievements to your stats page.</label>
+              </div>
+              <div class="checkbox">
+                <label><input ${info.boxLinkScreenshots ? `checked` : ``} id="box-link-screenshots" type="checkbox">Check if you have screenshots for the game and link them.</label>
+              </div>
+              <label for="box-screenshots">Screenshots Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="box-screenshots" type="text" value="${info.boxScreenshots || defaultInfo.boxScreenshots}">
+              <label for="box-no-screenshots">No Screenshots Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="box-no-screenshots" type="text" value="${info.boxNoScreenshots || defaultInfo.boxNoScreenshots}">
               <label for="box-review-position">Review Position:</label>
               <select class="form-control" id="box-review-position">
                 <option ${info.boxReviewPosition === `Left` ? `selected` : ``}">Left</option>
@@ -448,6 +498,24 @@
 					</div>
           <div class="tab-pane ${info.format === `panel` ? `active` : ``}" id="panel" role="tabpanel">
             <div class="form-group">
+              <label for="panel-achievements">Achievements Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="panel-achievements" type="text" value="${info.panelAchievements || defaultInfo.panelAchievements}">
+              <label for="panel-no-achievements">No Achievements Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="panel-no-achievements" type="text" value="${info.panelNoAchievements || defaultInfo.panelNoAchievements}">
+              <div class="checkbox">
+                <label><input ${info.panelLinkAchievements ? `checked` : ``} id="panel-link-achievements" type="checkbox">Link achievements to your stats page.</label>
+              </div>
+              <div class="checkbox">
+                <label><input ${info.panelLinkScreenshots ? `checked` : ``} id="panel-link-screenshots" type="checkbox">Check if you have screenshots for the game and link them.</label>
+              </div>
+              <label for="panel-screenshots">Screenshots Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="panel-screenshots" type="text" value="${info.panelScreenshots || defaultInfo.panelScreenshots}">
+              <label for="panel-no-screenshots">No Screenshots Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="panel-no-screenshots" type="text" value="${info.panelNoScreenshots || defaultInfo.panelNoScreenshots}">
               <label for="panel-rating">Rating:</label>
               <input class="form-control" id="panel-rating" type="text" value="${info.panelRating}">
               <div class="radio">
@@ -477,6 +545,24 @@
           </div>
           <div class="tab-pane ${info.format === `bar` ? `active` : ``}" id="bar" role="tabpanel">
             <div class="form-group">
+              <label for="bar-achievements">Achievements Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="bar-achievements" type="text" value="${info.barAchievements || defaultInfo.barAchievements}">
+              <label for="bar-no-achievements">No Achievements Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="bar-no-achievements" type="text" value="${info.barNoAchievements || defaultInfo.barNoAchievements}">
+              <div class="checkbox">
+                <label><input ${info.barLinkAchievements ? `checked` : ``} id="bar-link-achievements" type="checkbox">Link achievements to your stats page.</label>
+              </div>
+              <div class="checkbox">
+                <label><input ${info.barLinkScreenshots ? `checked` : ``} id="bar-link-screenshots" type="checkbox">Check if you have screenshots for the game and link them.</label>
+              </div>
+              <label for="bar-screenshots">Screenshots Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="bar-screenshots" type="text" value="${info.barScreenshots || defaultInfo.barScreenshots}">
+              <label for="bar-no-screenshots">No Screenshots Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="bar-no-screenshots" type="text" value="${info.barNoScreenshots || defaultInfo.barNoScreenshots}">
               <label for="bar-background-type">Background Type:</label>
               <select class="form-control" id="bar-background-type">
                 <option ${info.barBackgroundType === `Solid` ? `selected` : ``}>Solid</option>
@@ -505,10 +591,10 @@
               <label for="panel-rating">Custom Text:</label>
               <p>You can use templates here.</p>
               <input class="form-control" id="bar-custom-text" type="text" value="${info.barCustomText}">
-              <label for="bar-review-trigger-method">Review Trigger Method:</label>
               <div class="checkbox">
                 <label><input ${info.barUseCollapsibleReview ? `checked` : ``} id="bar-use-collapsible-review" type="checkbox">Use collapsible review.</label>
               </div>
+              <label for="bar-review-trigger-method">Review Trigger Method:</label>
               <select class="form-control" id="bar-review-trigger-method">
                 <option ${info.barReviewTriggerMethod === `Bar Click` ? `selected` : ``}>Bar Click</option>
                 <option ${info.barReviewTriggerMethod === `Button Click` ? `selected` : ``}>Button Click</option>
@@ -519,7 +605,6 @@
             <div class="form-group">
               <label for="custom-html">HTML:</label>
               <p>You can use templates here. Additionally, use %review% to define where you want the review to appear.</p>
-              <p>Add your custom HTML here. You can use the templates described at the top.</p>
               <textarea class="form-control" id="custom-html" rows="5">${info.customHtml}</textarea>
             </div>
           </div>
@@ -546,24 +631,24 @@
 		`;
     const dropdownElements = generatorElement.querySelectorAll(`.dropdown-menu li`);
     for (const dropdownElement of dropdownElements) {
-      dropdownElement.addEventListener(`click`, () => applyPgPreset(info, items, dropdownElement.textContent));
+      dropdownElement.addEventListener(`click`, () => applyPgPreset(defaultInfo, info, items, dropdownElement.textContent));
     }
-    document.querySelector(`.nav-tabs`).addEventListener(`click`, () => generatePgGame(generatorElement, info));
+    document.querySelector(`.nav-tabs`).addEventListener(`click`, () => generatePgGame(generatorElement, defaultInfo, info));
     const tabElements = generatorElement.querySelectorAll(`#generator-nav a[data-toggle="tab"]`);
     for (const tabElement of tabElements) {
-      tabElement.addEventListener(`click`, () => setTimeout(() => generatePgGame(generatorElement, info), 1000), true);
+      tabElement.addEventListener(`click`, () => setTimeout(() => generatePgGame(generatorElement, defaultInfo, info), 1000), true);
     }
     const controlElements = generatorElement.querySelectorAll(`input, select, textarea`);
     for (const controlElement of controlElements) {
-      controlElement.addEventListener(`change`, () => generatePgGame(generatorElement, info));
+      controlElement.addEventListener(`change`, () => generatePgGame(generatorElement, defaultInfo, info));
     }
     const presetButton = document.querySelector(`#preset-button`);
     presetButton.addEventListener(`click`, () => savePgPreset(info));
-    document.querySelector(`#generator-button`).addEventListener(`click`, () => generatePgGame(generatorElement, info, items, itemsIndex));
-    generatePgGame(generatorElement, info);
+    document.querySelector(`#generator-button`).addEventListener(`click`, () => generatePgGame(generatorElement, defaultInfo, info, items, itemsIndex));
+    generatePgGame(generatorElement, defaultInfo, info);
   }
 
-  function applyPgPreset(info, items, name) {
+  function applyPgPreset(defaultInfo, info, items, name) {
     const preset = settings.pgPresets.filter(x => x.name === name)[0];
     if (preset) {
       info.presetName = preset.name;
@@ -571,9 +656,21 @@
       info.review = preset.review;
       switch (preset.format) {
         case `box`:
+          info.boxAchievements = preset.boxAchievements;
+          info.boxNoAchievements = preset.boxNoAchievements;
+          info.boxLinkAchievements = preset.boxLinkAchievements;
+          info.boxLinkScreenshots = preset.boxLinkScreenshots;
+          info.boxScreenshots = preset.boxScreenshots;
+          info.boxNoScreenshots = preset.boxNoScreenshots;
           info.boxReviewPosition = preset.boxReviewPosition;
           break;
         case `panel`:
+          info.panelAchievements = preset.panelAchievements;
+          info.panelNoAchievements = preset.panelNoAchievements;
+          info.panelLinkAchievements = preset.panelLinkAchievements;
+          info.panelLinkScreenshots = preset.panelLinkScreenshots;
+          info.panelScreenshots = preset.panelScreenshots;
+          info.panelNoScreenshots = preset.panelNoScreenshots;
           info.panelRating = preset.panelRating;
           info.panelUsePredefinedBackground = preset.panelUsePredefinedBackground;
           info.panelPredefinedBackground = preset.panelPredefinedBackground;
@@ -582,6 +679,12 @@
           info.panelUseCollapsibleReview = preset.panelUseCollapsibleReview;
           break;
         case `bar`:
+          info.barAchievements = preset.barAchievements;
+          info.barNoAchievements = preset.barNoAchievements;
+          info.barLinkAchievements = preset.barLinkAchievements;
+          info.barLinkScreenshots = preset.barLinkScreenshots;
+          info.barScreenshots = preset.barScreenshots;
+          info.barNoScreenshots = preset.barNoScreenshots;
           info.barBackgroundType = preset.barBackgroundType;
           info.barBackground1 = preset.barBackground1;
           info.barBackground2 = preset.barBackground2;
@@ -596,11 +699,12 @@
         case `custom`:
           info.customHtml = preset.customHtml;
       }
-      selectPgGame(null, info, items);
+      selectPgGame(null, defaultInfo, info, items);
     }
   }
 
-  async function generatePgGame(generatorElement, info, items, itemsIndex) {
+  async function generatePgGame(generatorElement, defaultInfo, info, items, itemsIndex) {
+    info = Object.assign(defaultInfo, info);
     if (generatorElement) {
       info.format = generatorElement.querySelector(`.active`).getAttribute(`data-format`);
       info.review = document.querySelector(`#review`).value;
@@ -619,22 +723,69 @@
       Red: `danger`,
       Yellow: `warning`
     };
+    if (generatorElement) {
+      info.boxAchievements = document.querySelector(`#box-achievements`).value;
+      info.boxNoAchievements = document.querySelector(`#box-no-achievements`).value;
+      info.boxLinkAchievements = document.querySelector(`#box-link-achievements`).checked;
+      info.boxLinkScreenshots = document.querySelector(`#box-link-screenshots`).checked;
+      info.boxScreenshots = document.querySelector(`#box-screenshots`).value;
+      info.boxNoScreenshots = document.querySelector(`#box-no-screenshots`).value;
+      info.boxReviewPosition = document.querySelector(`#box-review-position`).value;
+
+      info.panelAchievements = document.querySelector(`#panel-achievements`).value;
+      info.panelNoAchievements = document.querySelector(`#panel-no-achievements`).value;
+      info.panelLinkAchievements = document.querySelector(`#panel-link-achievements`).checked;
+      info.panelLinkScreenshots = document.querySelector(`#panel-link-screenshots`).checked;
+      info.panelScreenshots = document.querySelector(`#panel-screenshots`).value;
+      info.panelNoScreenshots = document.querySelector(`#panel-no-screenshots`).value;
+      info.panelRating = document.querySelector(`#panel-rating`).value;
+      info.panelUsePredefinedBackground = document.querySelector(`#panel-use-predefined-background`).checked;
+      info.panelPredefinedBackground = document.querySelector(`#panel-predefined-background`).value;
+      info.panelUseCustomBackground = document.querySelector(`#panel-use-custom-background`).checked;
+      info.panelCustomBackground = document.querySelector(`#panel-custom-background`).value;
+      info.panelUseCollapsibleReview = document.querySelector(`#panel-use-collapsible-review`).checked;
+
+      info.barAchievements = document.querySelector(`#bar-achievements`).value;
+      info.barNoAchievements = document.querySelector(`#bar-no-achievements`).value;
+      info.barLinkAchievements = document.querySelector(`#bar-link-achievements`).checked;
+      info.barLinkScreenshots = document.querySelector(`#bar-link-screenshots`).checked;
+      info.barScreenshots = document.querySelector(`#bar-screenshots`).value;
+      info.barNoScreenshots = document.querySelector(`#bar-no-screenshots`).value;
+      info.barBackgroundType = document.querySelector(`#bar-background-type`).value;
+      info.barBackground1 = document.querySelector(`#bar-background-1`).value;
+      info.barBackground2 = document.querySelector(`#bar-background-2`).value;
+      info.barImagePosition = document.querySelector(`#bar-image-position`).value;
+      info.barCompletionBarPosition = document.querySelector(`#bar-completion-bar-position`).value;
+      info.barTitleColor = document.querySelector(`#bar-title-color`).value;
+      info.barTextColor = document.querySelector(`#bar-text-color`).value;
+      info.barCustomText = document.querySelector(`#bar-custom-text`).value;
+      info.barUseCollapsibleReview = document.querySelector(`#bar-use-collapsible-review`).checked;
+      info.barReviewTriggerMethod = document.querySelector(`#bar-review-trigger-method`).value;
+    }
+    if (info[`${info.format}LinkScreenshots`]) {
+      const screenshots = (await monkeyRequest.send(`https://steamcommunity.com/profiles/${settings.steamId}/screenshots?appid=${info.id}`)).dom.querySelectorAll(`[href*="steamcommunity.com/sharedfiles/filedetails"]`).length;
+      if (screenshots > 0) {
+        info.screenshots = `${screenshots} screenshots`;
+      } else {
+        info.screenshots = `no screenshots`;
+      }
+    } else {
+      info.screenshots = ``;
+    }
     const reviewPreview = info.review ? (await previewText(applyPgTemplate(info, info.review))).dom.querySelector(`.markdown`).outerHTML : ``;
     let html = ``;
     switch (info.format) {
       case `box`: {
-        if (generatorElement) {
-          info.boxReviewPosition = document.querySelector(`#box-review-position`).value;
-        }
         html = `
 					<li class="game game-thumbnail game-${info.state}">
 						<div class="title">${info.title}</div>
 						<a href="https://store.steampowered.com/app/${info.id}/" target="_blank">
 							<img alt="${info.title}" src="${info.image}">
 						</a>
-						<div class="caption">
+						<div class="caption" style="height: auto;">
 							<p>${info.playtime}</p>
-							<p>${info.achievements}</p>
+							${info.achievements === `no achievements` ? `<p class="text-muted">${applyPgTemplate(info, info.boxNoAchievements)}</p>` : (info.boxLinkAchievements ? `<a href="${applyPgTemplate(info, `https://steamcommunity.com/profiles/%steamid%/stats/%id%/?tab=achievements`)}" target="_blank">${applyPgTemplate(info, info.boxAchievements)}</a>` : `<p>${applyPgTemplate(info, info.boxAchievements)}</p>`)}
+							${info.boxLinkScreenshots ? (info.screenshots === `no screenshots` ? `<p class="text-muted">${applyPgTemplate(info, info.boxNoScreenshots)}</p>` : `<p><a href="${applyPgTemplate(info, `https://steamcommunity.com/profiles/%steamid%/screenshots?appid=%id%`)}" target="_blank">${applyPgTemplate(info, info.boxScreenshots)}</a></p>`) : ``}
 						</div>
 					</li>
 				`;
@@ -654,14 +805,6 @@
         break;
       }
       case `panel`: {
-        if (generatorElement) {
-          info.panelRating = document.querySelector(`#panel-rating`).value;
-          info.panelUsePredefinedBackground = document.querySelector(`#panel-use-predefined-background`).checked;
-          info.panelPredefinedBackground = document.querySelector(`#panel-predefined-background`).value;
-          info.panelUseCustomBackground = document.querySelector(`#panel-use-custom-background`).checked;
-          info.panelCustomBackground = document.querySelector(`#panel-custom-background`).value;
-          info.panelUseCollapsibleReview = document.querySelector(`#panel-use-collapsible-review`).checked;
-        }
         html = `
 					<div class="panel ${info.panelUsePredefinedBackground ? `panel-${panelColors[info.panelPredefinedBackground]}` : ``}" style="${info.panelUseCustomBackground ? `border-color: ${info.panelCustomBackground};` : ``} font-size: 14px;">
 						<div class="panel-heading" ${info.review && info.panelUseCollapsibleReview ? `data-target="#review-${settings.username}-${info.id}" data-toggle="collapse"` : ``} style="${info.panelUseCustomBackground ? `background-color: ${info.panelCustomBackground};` : ``} display: flex; position: relative;">
@@ -685,9 +828,14 @@
 								<div>
 									<i aria-hidden="true" class="fa fa-clock-o"></i> ${info.playtime}
 								</div>
-								<span>
-									<i aria-hidden="true" class="fa fa-trophy"></i> ${info.achievements}
-                </span>
+								<div>
+									<i aria-hidden="true" class="fa fa-trophy"></i> ${info.achievements === `no achievements` ? `<span class="text-muted">${applyPgTemplate(info, info.panelNoAchievements)}</span>` : (info.panelLinkAchievements ? `<a href="${applyPgTemplate(info, `https://steamcommunity.com/profiles/%steamid%/stats/%id%/?tab=achievements`)}" target="_blank">${applyPgTemplate(info, info.panelAchievements)}</a>` : `<span>${applyPgTemplate(info, info.panelAchievements)}</span>`)}
+                </div>
+                ${info.panelLinkScreenshots ? (`
+                  <div>
+                    <i aria-hidden="true" class="fa fa-image"></i> ${info.screenshots === `no screenshots` ? `<span class="text-muted">${applyPgTemplate(info, info.panelNoScreenshots)}</span>` : `<a href="${applyPgTemplate(info, `https://steamcommunity.com/profiles/%steamid%/screenshots?appid=%id%`)}" target="_blank">${applyPgTemplate(info, info.panelScreenshots)}</a>`}
+                  </div>
+                `) : ``}
                 ${info.review && info.panelUseCollapsibleReview ? `
                   <div aria-expanded="false" class="collapsed" style="bottom: 10px; position: absolute; right: 10px;">More <i class="fa fa-level-down"></i></div>
                 ` : ``}
@@ -705,18 +853,6 @@
         break;
       }
       case `bar`: {
-        if (generatorElement) {
-          info.barBackgroundType = document.querySelector(`#bar-background-type`).value;
-          info.barBackground1 = document.querySelector(`#bar-background-1`).value;
-          info.barBackground2 = document.querySelector(`#bar-background-2`).value;
-          info.barImagePosition = document.querySelector(`#bar-image-position`).value;
-          info.barCompletionBarPosition = document.querySelector(`#bar-completion-bar-position`).value;
-          info.barTitleColor = document.querySelector(`#bar-title-color`).value;
-          info.barTextColor = document.querySelector(`#bar-text-color`).value;
-          info.barCustomText = document.querySelector(`#bar-custom-text`).value;
-          info.barUseCollapsibleReview = document.querySelector(`#bar-use-collapsible-review`).checked;
-          info.barReviewTriggerMethod = document.querySelector(`#bar-review-trigger-method`).value;
-        }
         const image = `
           <a href="https://store.steampowered.com/app/${info.id}/" target="_blank">
             <img src="${info.image}" style="max-width: none;">
@@ -725,7 +861,7 @@
         const details = `
           <div style="padding-left: 5px; width: 100%;">
             <h2 style="color: ${info.barTitleColor}; font-size: 22px; margin: 0; padding-top: 5px;">${info.title}</h2>
-            <p style="color: ${info.barTextColor}; font-size: 10px; margin-bottom: 0; padding-bottom: 5px;">${info.playtime}, ${info.achievements}<br>${applyPgTemplate(info, info.barCustomText)}</p>
+            <p style="color: ${info.barTextColor}; font-size: 10px; margin-bottom: 0; padding-bottom: 5px;">${info.playtime}, ${info.achievements === `no achievements` ? `<span class="text-muted">${applyPgTemplate(info, info.barNoAchievements)}</span>` : (info.barLinkAchievements ? `<a href="${applyPgTemplate(info, `https://steamcommunity.com/profiles/%steamid%/stats/%id%/?tab=achievements`)}" target="_blank">${applyPgTemplate(info, info.barAchievements)}</a>` : `<span>${applyPgTemplate(info, info.barAchievements)}</span>`)}${info.barLinkScreenshots ? `, ${info.screenshots === `no screenshots` ? `<span class="text-muted">${applyPgTemplate(info, info.barNoScreenshots)}</span>` : `<a href="${applyPgTemplate(info, `https://steamcommunity.com/profiles/%steamid%/screenshots?appid=%id%`)}" target="_blank">${applyPgTemplate(info, info.barScreenshots)}</a>`}` : ``}</p>
           </div>
         `;
         html = `
@@ -798,7 +934,7 @@
       generatorResult.innerHTML = items.toShow.join(``);
       const editButtons = generatorResult.querySelectorAll(`.edit`);
       for (const button of editButtons) {
-        button.addEventListener(`click`, () => selectPgGame(null, JSON.parse(button.parentElement.previousElementSibling.getAttribute(`data-info`)), items, parseInt(button.parentElement.previousElementSibling.getAttribute(`data-items-index`))));
+        button.addEventListener(`click`, () => selectPgGame(null, defaultInfo, JSON.parse(button.parentElement.previousElementSibling.getAttribute(`data-info`)), items, parseInt(button.parentElement.previousElementSibling.getAttribute(`data-items-index`))));
       }
       const removeButtons = generatorResult.querySelectorAll(`.remove`);
       for (const button of removeButtons) {
@@ -820,13 +956,25 @@
   }
 
   function applyPgTemplate(info, text) {
-    return text
+    const achievements_match = (info.achievements || ``).match(/(\d+?)\sof\s(\d+)/);
+    const [achievements_count, achievements_total] = achievements_match ? [parseInt(achievements_match[1]), parseInt(achievements_match[2])] : [0, 0];
+    const achievements_percentage = achievements_total > 0 ? Math.round(achievements_count / achievements_total * 10000) / 100 : 0;
+    const screenshots_match = (info.screenshots || ``).match(/\d+/);
+    const screenshots_count = screenshots_match ? parseInt(screenshots_match[0]) : 0;
+    return (text || ``)
+      .replace(/%steamid%/g, settings.steamId)
+      .replace(/%username%/g, settings.username)
       .replace(/%state%/g, info.state)
       .replace(/%image%/g, info.image)
       .replace(/%title%/g, info.title)
       .replace(/%id%/g, info.id)
       .replace(/%playtime%/g, info.playtime)
-      .replace(/%achievements%/g, info.achievements);
+      .replace(/%achievements%/g, info.achievements)
+      .replace(/%achievements_count%/g, achievements_count)
+      .replace(/%achievements_total%/g, achievements_total)
+      .replace(/%achievements_percentage%/g, achievements_percentage)
+      .replace(/%screenshots%/g, info.screenshots)
+      .replace(/%screenshots_count%/g, screenshots_count);
   }
 
   function escapeHtml(text) {
@@ -857,9 +1005,21 @@
     preset.review = info.review;
     switch (preset.format) {
       case `box`:
+        preset.boxAchievements = info.boxAchievements;
+        preset.boxNoAchievements = info.boxNoAchievements;
+        preset.boxLinkAchievements = info.boxLinkAchievements;
+        preset.boxLinkScreenshots = info.boxLinkScreenshots;
+        preset.boxScreenshots = info.boxScreenshots;
+        preset.boxNoScreenshots = info.boxNoScreenshots;
         preset.boxReviewPosition = info.boxReviewPosition;
         break;
       case `panel`:
+        preset.panelAchievements = info.panelAchievements;
+        preset.panelNoAchievements = info.panelNoAchievements;
+        preset.panelLinkAchievements = info.panelLinkAchievements;
+        preset.panelLinkScreenshots = info.panelLinkScreenshots;
+        preset.panelScreenshots = info.panelScreenshots;
+        preset.panelNoScreenshots = info.panelNoScreenshots;
         preset.panelRating = info.panelRating;
         preset.panelUsePredefinedBackground = info.panelUsePredefinedBackground;
         preset.panelPredefinedBackground = info.panelPredefinedBackground;
@@ -868,6 +1028,12 @@
         preset.panelUseCollapsibleReview = info.panelUseCollapsibleReview;
         break;
       case `bar`:
+        preset.barAchievements = info.barAchievements;
+        preset.barNoAchievements = info.barNoAchievements;
+        preset.barLinkAchievements = info.barLinkAchievements;
+        preset.barLinkScreenshots = info.barLinkScreenshots;
+        preset.barScreenshots = info.barScreenshots;
+        preset.barNoScreenshots = info.barNoScreenshots;
         preset.barBackgroundType = info.barBackgroundType;
         preset.barBackground1 = info.barBackground1;
         preset.barBackground2 = info.barBackground2;
@@ -920,8 +1086,10 @@
       games[id] = element;
     }
     await GM.setValue(`tlcGames`, JSON.stringify(settings.tlcGames));
-    await tagTlcStatus(`rgb(92 ,184, 92)`, games, `Beaten`);
-    await tagTlcStatus(`rgb(91, 192, 222)`, games, `Completed`);
+    await tagTlcStatus(`#5cb85c`, games, `Beaten`, `beaten`);
+    await tagTlcStatus(`#5bc0de`, games, `Completed`, `completed`);
+    await tagTlcStatus(`#f0ad4e`, games, `Unfinished`, `unfinished`);
+    await tagTlcStatus(`#d9534f`, games, `Won't Play`, `wont-play`);
     document.querySelector(`[id*="counter"]`).innerHTML = `
       <font size="4">
           <b>${elements.length} Games</b>
@@ -931,23 +1099,23 @@
 
   function tagTlcNew(element) {
     element.insertAdjacentHTML(`afterEnd`, `
-      <b style="color: rgb(85, 85, 85);"> [New]</b>
+      <b style="color: #555555;"> [New]</b>
     `);
   }
 
   function tagTlcOwned(element) {
     element.insertAdjacentHTML(`afterEnd`, `
-      <b style="color: rgb(217, 83, 79);"> [Owned]</b>
+      <b style="color: #555555;"> [Owned]</b>
     `);
   }
 
-  async function tagTlcStatus(color, games, status) {
-    const dom = (await monkeyRequest.send(`${url}/users/${settings.username}/games/${status.toLowerCase()}`)).dom;
+  async function tagTlcStatus(color, games, status, key) {
+    const dom = (await monkeyRequest.send(`${url}/users/${settings.username}/games/${key}`)).dom;
     if (dom) {
       const elements = dom.querySelectorAll(`.steam`);
       const ids = new Set();
       for (const element of elements) {
-        ids.add(parseInt(element.getAttribute(`href`).match(/\d+/)[0]));
+        ids.add(element.getAttribute(`href`).match(/\d+/)[0]);
       }
       const foundIds = new Set(Object.keys(games).filter(x => ids.has(x)));
       for (const id of foundIds) {
