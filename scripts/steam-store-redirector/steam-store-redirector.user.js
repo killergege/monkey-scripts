@@ -14,10 +14,13 @@
 // @namespace steamStoreRedirector
 // @noframes
 // @require https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/Settings.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/MutationObserver.js
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/Settings.js
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/MutationObserver.js
 // @run-at document-start
-// @version 3.0.0
+// @version 3.1.0
+// @downloadURL htps://github.com/gsrafael01/monkey-scripts/raw/master/scripts/steam-store-redirector/steam-store-redirector.user.js
+// @updateURL htps://github.com/gsrafael01/monkey-scripts/raw/master/scripts/steam-store-redirector/steam-store-redirector.user.js
+// ==/UserScript==
 // ==/UserScript==
 
 (async () => {

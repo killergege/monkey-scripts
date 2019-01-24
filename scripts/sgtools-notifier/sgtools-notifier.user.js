@@ -13,8 +13,11 @@
 // @namespace sgtoolsNotifier
 // @noframes
 // @require https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/Settings.js
-// @version 3.0.0
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/Settings.js
+// @version 3.1.0
+// @downloadURL htps://github.com/gsrafael01/monkey-scripts/raw/master/scripts/sgtools-notifier/sgtools-notifier.user.js
+// @updateURL htps://github.com/gsrafael01/monkey-scripts/raw/master/scripts/sgtools-notifier/sgtools-notifier.user.js
+// ==/UserScript==
 // ==/UserScript==
 
 (async () => {

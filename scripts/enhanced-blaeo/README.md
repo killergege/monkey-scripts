@@ -39,10 +39,3 @@ Adds some cool features to [BLAEO](https://backlog-deepness.rhcloud.com/).
 
 * For this feature to work, you need a Steam API Key. Get one [here](https://steamcommunity.com/dev/apikey) (you can use any domain as long as it's not already taken) and set it in the settings menu.
 * Highlights newly added, owned, beaten and completed games from the current theme list.
-
----
-
-## Changelog
-
-* **Nov 26, 2018** v3.0.1 released
-* **Nov 25, 2018** v3.0.0 released

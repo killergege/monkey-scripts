@@ -6,10 +6,13 @@
 // @name GitHub Notifier
 // @namespace githubNotifier
 // @noframes
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/DomParser.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/Request.js
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/DomParser.js
+// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/Request.js
 // @run-at document-end
-// @version 3.0.0
+// @version 3.1.0
+// @downloadURL htps://github.com/gsrafael01/monkey-scripts/raw/master/scripts/github-notifier/github-notifier.user.js
+// @updateURL htps://github.com/gsrafael01/monkey-scripts/raw/master/scripts/github-notifier/github-notifier.user.js
+// ==/UserScript==
 // ==/UserScript==
 
 (() => {
