@@ -16,7 +16,7 @@
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/DomParser.js
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.0.0/utils/Request.js
 // @run-at document-idle
-// @version 3.0.2
+// @version 3.0.3
 // ==/UserScript==
 
 (() => {
@@ -39,7 +39,6 @@
   async function setDefaultValues() {
     const oldValues = {
       isAdmin: ``,
-      steamApiKey: `SteamAPIKey`,
       steamId: `SteamID64`,
       username: `Username`,
       lastSync: `LastSync`,
@@ -51,7 +50,6 @@
     };
     const defaultValues = {
       isAdmin: false,
-      steamApiKey: ``,
       steamId: ``,
       username: `?`,
       lastSync: 0,
@@ -90,7 +88,7 @@
       } else if (window.location.href.match(/\/posts\/new/)) {
         addPgButton();
       }
-      if (settings.steamApiKey) {
+      if (settings.steamId) {
         if (!settings.tlcList || (settings.tlcCurrentMonth !== getCurrentMonth())) {
           await getTlcList();
         } else if (window.location.href.match(settings.tlcList)) {
@@ -193,13 +191,6 @@
     const element = document.querySelector(`.col-sm-9`);
     element.innerHTML = `
       <div class="form-group">
-        <label class="control-label">Steam API Key</label>
-        <input class="form-control" type="text" value="${settings.steamApiKey}" style="margin: 0 0 10px;"/>
-        <div>
-          <button class="btn btn-primary" type="submit">Save</button>
-        </div>
-      </div>
-      <div class="form-group">
         <label class="control=label">Sync</label>
         <p>Your current username is <b>${settings.username}</b> and you have <b>${settings.ownedGames.length}</b> games in your library, right?</p>
         <p>
@@ -210,25 +201,19 @@
         </div>
       </div>
     `;
-    const steamApiKeyInput = element.firstElementChild.firstElementChild.nextElementSibling;
-    const saveButton = steamApiKeyInput.nextElementSibling.firstElementChild;
-    const usernameElement = element.lastElementChild.firstElementChild.nextElementSibling.firstElementChild;
+    const usernameElement = element.firstElementChild.firstElementChild.nextElementSibling.firstElementChild;
     const ownedGamesElement = usernameElement.nextElementSibling;
-    const lastSyncElement = element.lastElementChild.lastElementChild.previousElementSibling.firstElementChild.firstElementChild;
-    const syncButton = element.lastElementChild.lastElementChild.firstElementChild;
+    const lastSyncElement = element.firstElementChild.lastElementChild.previousElementSibling.firstElementChild.firstElementChild;
+    const syncButton = element.firstElementChild.lastElementChild.firstElementChild;
     lastSyncElement.textContent = settings.lastSync ? new Date(settings.lastSync).toLocaleString() : `never`;
-    saveButton.addEventListener(`click`, () => saveSettings(saveButton, steamApiKeyInput.value));
     syncButton.addEventListener(`click`, () => sync(syncButton, usernameElement, ownedGamesElement, lastSyncElement));
   }
 
-  async function saveSettings(saveButton, steamApiKey) {
-    saveButton.textContent = `Saving...`;
-    settings.steamApiKey = steamApiKey;
-    await GM.setValue(`steamApiKey`, settings.steamApiKey);
-    if (!settings.username || settings.username === `?`) {
-      settings.username = document.querySelector(`.navbar-btn`).getAttribute(`href`).match(/\/users\/(.+?)$/)[1];
-      await GM.setValue(`username`, settings.username);
-    }
+  async function sync(syncButton, usernameElement, ownedGamesElement, lastSyncElement) {
+    syncButton.textContent = `Syncing...`;
+    settings.username = document.querySelector(`.navbar-btn`).getAttribute(`href`).match(/\/users\/(.+?)$/)[1];
+    await GM.setValue(`username`, settings.username);
+    usernameElement.textContent = settings.username;
     if (!settings.steamId) {
       const dom = (await monkeyRequest.send(`${url}/users/${settings.username}`)).dom;
       if (dom) {
@@ -236,42 +221,26 @@
         await GM.setValue(`steamId`, settings.steamId);
       }
     }
-    saveButton.textContent = `Save`;
-  }
-
-  async function sync(syncButton, usernameElement, ownedGamesElement, lastSyncElement) {
-    if (!settings.steamApiKey) {
-      window.alert(`You must set a Steam API key first!`);
-      return;
-    }
-    syncButton.textContent = `Syncing...`;
     await syncOwnedGames();
-    usernameElement.textContent = settings.username;
     ownedGamesElement.textContent = settings.ownedGames.length;
     lastSyncElement.textContent = new Date(settings.lastSync).toLocaleString();
     syncButton.textContent = `Sync`;
   }
 
-  function syncOwnedGames() {
-    return new Promise(async resolve => {
-      settings.username = document.querySelector(`.navbar-btn`).getAttribute(`href`).match(/\/users\/(.+?)$/)[1];
-      await GM.setValue(`username`, settings.username);
-      settings.ownedGames = [];
-      GM.xmlHttpRequest({
-        method: `GET`,
-        url: `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${settings.steamApiKey}&steamid=${settings.steamId}&format=json`,
-        onload: async response => {
-          const games = JSON.parse(response.responseText).response.games;
-          for (const game of games) {
-            settings.ownedGames.push(game.appid);
-          }
-          settings.lastSync = Date.now();
-          await GM.setValue(`ownedGames`, JSON.stringify(settings.ownedGames));
-          await GM.setValue(`lastSync`, settings.lastSync);
-          resolve();
-        }
-      });
-    });
+  async function syncOwnedGames() {
+    settings.ownedGames = [];
+    const dom = (await monkeyRequest.send(`${url}/users/+${settings.steamId}/games`)).dom;
+    if (dom) {
+      const elements = dom.querySelectorAll(`.steam`);
+      const ids = new Set();
+      for (const element of elements) {
+        ids.add(parseInt(element.getAttribute(`href`).match(/\d+/)[0]));
+      }
+      settings.ownedGames.push(...ids);
+      settings.lastSync = Date.now();
+      await GM.setValue(`ownedGames`, JSON.stringify(settings.ownedGames));
+      await GM.setValue(`lastSync`, settings.lastSync);
+    }
   }
 
   function getCurrentMonth() {
@@ -301,7 +270,7 @@
       panelUsePredefinedBackground: true,
       panelPredefinedBackground: `Blue`,
       panelUseCustomBackground: false,
-      panelCustomBackground: ``,
+      panelCustomBackground: `#000000`,
       panelUseCollapsibleReview: false,
       barAchievements: `%achievements_count% of %achievements_total% achievements (%achievements_percentage%%)`,
       barNoAchievements: `no achievements`,
@@ -310,8 +279,8 @@
       barScreenshots: `%screenshots_count% screenshots`,
       barNoScreenshots: `no screenshots`,
       barBackgroundType: `Solid`,
-      barBackground1: ``,
-      barBackground2: ``,
+      barBackground1: `#000000`,
+      barBackground2: `#000000`,
       barImagePosition: `Left`,
       barCompletionBarPosition: `Left`,
       barTitleColor: `#ffffff`,
@@ -379,12 +348,12 @@
   }
 
   async function onPgSearchInput(defaultInfo, items) {
-    if (!settings.steamApiKey) {
-      alert(`You must set a Steam API key in the settings menu!`);
+    if (!settings.steamId) {
+      alert(`You must sync in the Enhanced BLAEO section of the settings menu first.`);
       return;
     }
     const searchResultsElement = document.querySelector(`#search-results`);
-    const text = (await monkeyRequest.send(`${url}/users/${settings.username}/games/filter?q=${document.querySelector(`#filter-games`).value}&exclude=vbyypyb`)).text;
+    const text = (await monkeyRequest.send(`${url}/users/+${settings.steamId}/games/filter?q=${document.querySelector(`#filter-games`).value}&exclude=vbyypyb`)).text;
     searchResultsElement.innerHTML = text;
     const elements = searchResultsElement.querySelectorAll(`.game`);
     for (const element of elements) {
@@ -397,7 +366,7 @@
 
   function selectPgGame(element, defaultInfo, info, items, itemsIndex) {
     if (info) {
-      info = Object.assign(defaultInfo, info);
+      info = Object.assign({}, defaultInfo, info);
     } else {
       const titleElement = element.querySelector(`.title`);
       const captionElement = element.querySelector(`.caption`);
@@ -704,7 +673,7 @@
   }
 
   async function generatePgGame(generatorElement, defaultInfo, info, items, itemsIndex) {
-    info = Object.assign(defaultInfo, info);
+    info = Object.assign({}, defaultInfo, info);
     if (generatorElement) {
       info.format = generatorElement.querySelector(`.active`).getAttribute(`data-format`);
       info.review = document.querySelector(`#review`).value;
@@ -1110,7 +1079,7 @@
   }
 
   async function tagTlcStatus(color, games, status, key) {
-    const dom = (await monkeyRequest.send(`${url}/users/${settings.username}/games/${key}`)).dom;
+    const dom = (await monkeyRequest.send(`${url}/users/+${settings.steamId}/games/${key}`)).dom;
     if (dom) {
       const elements = dom.querySelectorAll(`.steam`);
       const ids = new Set();
