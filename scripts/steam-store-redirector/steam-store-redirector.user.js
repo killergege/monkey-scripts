@@ -18,8 +18,8 @@
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/MutationObserver.js
 // @run-at document-start
 // @version 3.1.0
-// @downloadURL htps://github.com/gsrafael01/monkey-scripts/raw/master/scripts/steam-store-redirector/steam-store-redirector.user.js
-// @updateURL htps://github.com/gsrafael01/monkey-scripts/raw/master/scripts/steam-store-redirector/steam-store-redirector.user.js
+// @downloadURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/steam-store-redirector/steam-store-redirector.user.js
+// @updateURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/steam-store-redirector/steam-store-redirector.user.js
 // ==/UserScript==
 // ==/UserScript==
 

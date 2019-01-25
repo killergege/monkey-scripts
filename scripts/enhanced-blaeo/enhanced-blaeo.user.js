@@ -18,8 +18,8 @@
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.1/utils/Request.js
 // @run-at document-idle
 // @version 3.1.1
-// @downloadURL htps://github.com/gsrafael01/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
-// @updateURL htps://github.com/gsrafael01/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
+// @downloadURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
+// @updateURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
 // ==/UserScript==
 
 (() => {
