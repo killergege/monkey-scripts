@@ -8,7 +8,7 @@
 // @connect external-domain-2.example
 const monkeyRequest = {
   async send(url, options = {}) {
-    return new Promise(resolve => {
+    return new Promise(async resolve => {
       if (url.match(window.location.host)) {
         const response = await window.fetch(url, options);
         const text = await response.text();
