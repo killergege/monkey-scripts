@@ -1,4 +1,4 @@
-// Make sure to add this to the main script:
+// Make sure to add this metadata to the main script:
 // @grant GM.info
 // @grant GM.getValue
 // @grant GM.setValue
