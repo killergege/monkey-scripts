@@ -37,5 +37,5 @@ Adds some cool features to [BLAEO](https://backlog-deepness.rhcloud.com/).
 
 ![](http://i.imgur.com/Hhrm64W.png)
 
-* For this feature to work, you need a Steam API Key. Get one [here](https://steamcommunity.com/dev/apikey) (you can use any domain as long as it's not already taken) and set it in the settings menu.
 * Highlights newly added, owned, beaten and completed games from the current theme list.
+* For this feature to highlight your owned games, you need to sync them [here](https://www.backlog-assassins.net/settings/general#enhancedBlaeo).
