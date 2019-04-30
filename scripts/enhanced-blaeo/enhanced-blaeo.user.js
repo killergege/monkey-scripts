@@ -17,7 +17,7 @@
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/DomParser.js
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.1/utils/Request.js
 // @run-at document-idle
-// @version 3.1.1
+// @version 3.1.2
 // @downloadURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
 // @updateURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
 // ==/UserScript==
@@ -256,6 +256,8 @@
   async function addPgButton() {
     const defaultInfo = {
       format: `box`,
+      boxPlaytime: `%playtime% playtime`,
+      boxShowPlaytimeThisMonth: false,
       boxAchievements: `%achievements_count% of %achievements_total% achievements`,
       boxNoAchievements: `no achievements`,
       boxLinkAchievements: true,
@@ -263,6 +265,8 @@
       boxScreenshots: `%screenshots_count% screenshots`,
       boxNoScreenshots: `no screenshots`,
       boxReviewPosition: `Left`,
+      panelPlaytime: `%playtime% playtime`,
+      panelShowPlaytimeThisMonth: false,
       panelAchievements: `%achievements_count% of %achievements_total% achievements (%achievements_percentage%%)`,
       panelNoAchievements: `no achievements`,
       panelLinkAchievements: true,
@@ -275,6 +279,8 @@
       panelUseCustomBackground: false,
       panelCustomBackground: `#000000`,
       panelUseCollapsibleReview: false,
+      barPlaytime: `%playtime% playtime`,
+      barShowPlaytimeThisMonth: false,
       barAchievements: `%achievements_count% of %achievements_total% achievements (%achievements_percentage%%)`,
       barNoAchievements: `no achievements`,
       barLinkAchievements: true,
@@ -291,7 +297,7 @@
       barCustomText: ``,
       barUseCollapsibleReview: false,
       barReviewTriggerMethod: `Bar Click`,
-      customHtml: ``,
+      customHtml: `<li></li>`,
       review: ``,
       presetName: ``
     };
@@ -379,7 +385,7 @@
         image: element.querySelector(`img`).getAttribute(`src`),
         title: titleElement.textContent.trim(),
         id: titleElement.nextElementSibling.getAttribute(`href`).match(/\d+/)[0],
-        playtime: captionElement.firstElementChild.textContent.trim(),
+        playtime: captionElement.firstElementChild.textContent.trim().replace(/\splaytime/, ``),
         achievements: captionElement.lastElementChild.textContent.trim(),
       }, defaultInfo);
     }
@@ -400,7 +406,8 @@
           <li><b>%image%</b> - The URL of the game image.</li>
           <li><b>%title%</b> - The title of the game.</li>
           <li><b>%id%</b> - The Steam appid of the game.</li>
-          <li><b>%playtime%</b> - Your playtime.</li>
+          <li><b>%playtime%</b> - Your playtime in the format "12 hours".</li>
+          <li><b>%playtime_this_month%</b> - Your playtime this month in the format "12 hours".</li>
           <li><b>%achievements%</b> - Your achievements in the format "X of Y achievements" or "no achievements".</li>
           <li><b>%achievements_count%</b> - The number of achievements you have unlocked in the game.</li>
           <li><b>%achievements_total%</b> - The total number of achievements in the game.</li>
@@ -443,6 +450,12 @@
         <div class="tab-content">
           <div class="tab-pane ${info.format === `box` ? `active` : ``}" id="box" role="tabpanel">
             <div class="form-group">
+              <label for="box-playtime">Playtime Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="box-playtime" type="text" value="${info.boxPlaytime || defaultInfo.boxPlaytime}">
+              <div class="checkbox">
+                <label><input ${info.boxShowPlaytimeThisMonth ? `checked` : ``} id="box-show-playtime-this-month" type="checkbox">Show your playtime this month.</label>
+              </div>
               <label for="box-achievements">Achievements Label:</label>
               <p>You can use templates here.</p>
               <input class="form-control" id="box-achievements" type="text" value="${info.boxAchievements || defaultInfo.boxAchievements}">
@@ -470,6 +483,12 @@
 					</div>
           <div class="tab-pane ${info.format === `panel` ? `active` : ``}" id="panel" role="tabpanel">
             <div class="form-group">
+              <label for="panel-playtime">Playtime Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="panel-playtime" type="text" value="${info.panelPlaytime || defaultInfo.panelPlaytime}">
+              <div class="checkbox">
+                <label><input ${info.panelShowPlaytimeThisMonth ? `checked` : ``} id="panel-show-playtime-this-month" type="checkbox">Show your playtime this month.</label>
+              </div>
               <label for="panel-achievements">Achievements Label:</label>
               <p>You can use templates here.</p>
               <input class="form-control" id="panel-achievements" type="text" value="${info.panelAchievements || defaultInfo.panelAchievements}">
@@ -517,6 +536,12 @@
           </div>
           <div class="tab-pane ${info.format === `bar` ? `active` : ``}" id="bar" role="tabpanel">
             <div class="form-group">
+              <label for="bar-playtime">Playtime Label:</label>
+              <p>You can use templates here.</p>
+              <input class="form-control" id="bar-playtime" type="text" value="${info.barPlaytime || defaultInfo.barPlaytime}">
+              <div class="checkbox">
+                <label><input ${info.barShowPlaytimeThisMonth ? `checked` : ``} id="bar-show-playtime-this-month" type="checkbox">Show your playtime this month.</label>
+              </div>
               <label for="bar-achievements">Achievements Label:</label>
               <p>You can use templates here.</p>
               <input class="form-control" id="bar-achievements" type="text" value="${info.barAchievements || defaultInfo.barAchievements}">
@@ -577,7 +602,7 @@
             <div class="form-group">
               <label for="custom-html">HTML:</label>
               <p>You can use templates here. Additionally, use %review% to define where you want the review to appear.</p>
-              <textarea class="form-control" id="custom-html" rows="5">${info.customHtml}</textarea>
+              <textarea class="form-control" id="custom-html" rows="5">${info.customHtml || defaultInfo.customHtml}</textarea>
             </div>
           </div>
         </div>
@@ -628,6 +653,8 @@
       info.review = preset.review;
       switch (preset.format) {
         case `box`:
+          info.boxPlaytime = preset.boxPlaytime;
+          info.boxShowPlaytimeThisMonth = preset.boxShowPlaytimeThisMonth;
           info.boxAchievements = preset.boxAchievements;
           info.boxNoAchievements = preset.boxNoAchievements;
           info.boxLinkAchievements = preset.boxLinkAchievements;
@@ -637,6 +664,8 @@
           info.boxReviewPosition = preset.boxReviewPosition;
           break;
         case `panel`:
+          info.panelPlaytime = preset.panelPlaytime;
+          info.panelShowPlaytimeThisMonth = preset.panelShowPlaytimeThisMonth;
           info.panelAchievements = preset.panelAchievements;
           info.panelNoAchievements = preset.panelNoAchievements;
           info.panelLinkAchievements = preset.panelLinkAchievements;
@@ -651,6 +680,8 @@
           info.panelUseCollapsibleReview = preset.panelUseCollapsibleReview;
           break;
         case `bar`:
+          info.barPlaytime = preset.barPlaytime;
+          info.barShowPlaytimeThisMonth = preset.barShowPlaytimeThisMonth;
           info.barAchievements = preset.barAchievements;
           info.barNoAchievements = preset.barNoAchievements;
           info.barLinkAchievements = preset.barLinkAchievements;
@@ -696,6 +727,15 @@
       Yellow: `warning`
     };
     if (generatorElement) {
+      const boxPlaytime = document.querySelector(`#box-playtime`);
+      info.boxPlaytime = boxPlaytime.value;
+      info.boxShowPlaytimeThisMonth = document.querySelector(`#box-show-playtime-this-month`).checked;
+      if (info.boxShowPlaytimeThisMonth) {
+        info.boxPlaytime += ` (%playtime_this_month% this month)`;
+      } else {
+        info.boxPlaytime = info.boxPlaytime.replace(/\s\(%playtime_this_month%\sthis\smonth\)/, ``);
+      }
+      boxPlaytime.value = info.boxPlaytime;
       info.boxAchievements = document.querySelector(`#box-achievements`).value;
       info.boxNoAchievements = document.querySelector(`#box-no-achievements`).value;
       info.boxLinkAchievements = document.querySelector(`#box-link-achievements`).checked;
@@ -704,6 +744,15 @@
       info.boxNoScreenshots = document.querySelector(`#box-no-screenshots`).value;
       info.boxReviewPosition = document.querySelector(`#box-review-position`).value;
 
+      const panelPlaytime = document.querySelector(`#panel-playtime`);
+      info.panelPlaytime = panelPlaytime.value;
+      info.panelShowPlaytimeThisMonth = document.querySelector(`#panel-show-playtime-this-month`).checked;
+      if (info.panelShowPlaytimeThisMonth) {
+        info.panelPlaytime += ` (%playtime_this_month% this month)`;
+      } else {
+        info.panelPlaytime = info.panelPlaytime.replace(/\s\(%playtime_this_month%\sthis\smonth\)/, ``);
+      }
+      panelPlaytime.value = info.panelPlaytime;
       info.panelAchievements = document.querySelector(`#panel-achievements`).value;
       info.panelNoAchievements = document.querySelector(`#panel-no-achievements`).value;
       info.panelLinkAchievements = document.querySelector(`#panel-link-achievements`).checked;
@@ -717,6 +766,15 @@
       info.panelCustomBackground = document.querySelector(`#panel-custom-background`).value;
       info.panelUseCollapsibleReview = document.querySelector(`#panel-use-collapsible-review`).checked;
 
+      const barPlaytime = document.querySelector(`#bar-playtime`);
+      info.barPlaytime = barPlaytime.value;
+      info.barShowPlaytimeThisMonth = document.querySelector(`#bar-show-playtime-this-month`).checked;
+      if (info.barShowPlaytimeThisMonth) {
+        info.barPlaytime += ` (%playtime_this_month% this month)`;
+      } else {
+        info.barPlaytime = info.barPlaytime.replace(/\s\(%playtime_this_month%\sthis\smonth\)/, ``);
+      }
+      barPlaytime.value = info.barPlaytime;
       info.barAchievements = document.querySelector(`#bar-achievements`).value;
       info.barNoAchievements = document.querySelector(`#bar-no-achievements`).value;
       info.barLinkAchievements = document.querySelector(`#bar-link-achievements`).checked;
@@ -733,8 +791,20 @@
       info.barCustomText = document.querySelector(`#bar-custom-text`).value;
       info.barUseCollapsibleReview = document.querySelector(`#bar-use-collapsible-review`).checked;
       info.barReviewTriggerMethod = document.querySelector(`#bar-review-trigger-method`).value;
+
+      info.customHtml = document.querySelector(`#custom-html`).value;
     }
-    if (info[`${info.format}LinkScreenshots`]) {
+    if ((info.format === `custom` && info.customHtml.match(/%playtime_this_month%/)) || info[`${info.format}ShowPlaytimeThisMonth`]) {
+      const element = (await monkeyRequest.send(`${url}/users/+${settings.steamId}/played`)).dom.querySelector(`[href*="store.steampowered.com/app/${info.id}"]`);
+      if (element) {
+        info.playtimeThisMonth = element.closest(`td`).nextElementSibling.nextElementSibling.textContent.trim();
+      } else {
+        info.playtimeThisMonth = `0`;
+      }
+    } else {
+      info.playtimeThisMonth = `0`;
+    }
+    if ((info.format === `custom` && info.customHtml.match(/%screenshots%/)) || info[`${info.format}LinkScreenshots`]) {
       const screenshots = (await monkeyRequest.send(`https://steamcommunity.com/profiles/${settings.steamId}/screenshots?appid=${info.id}`)).dom.querySelectorAll(`[href*="steamcommunity.com/sharedfiles/filedetails"]`).length;
       if (screenshots > 0) {
         info.screenshots = `${screenshots} screenshots`;
@@ -755,7 +825,7 @@
 							<img alt="${info.title}" src="${info.image}">
 						</a>
 						<div class="caption" style="height: auto;">
-							<p>${info.playtime}</p>
+							<p>${applyPgTemplate(info, info.boxPlaytime)}</p>
 							${info.achievements === `no achievements` ? `<p class="text-muted">${applyPgTemplate(info, info.boxNoAchievements)}</p>` : (info.boxLinkAchievements ? `<a href="${applyPgTemplate(info, `https://steamcommunity.com/profiles/%steamid%/stats/%id%/?tab=achievements`)}" target="_blank">${applyPgTemplate(info, info.boxAchievements)}</a>` : `<p>${applyPgTemplate(info, info.boxAchievements)}</p>`)}
 							${info.boxLinkScreenshots ? (info.screenshots === `no screenshots` ? `<p class="text-muted">${applyPgTemplate(info, info.boxNoScreenshots)}</p>` : `<p><a href="${applyPgTemplate(info, `https://steamcommunity.com/profiles/%steamid%/screenshots?appid=%id%`)}" target="_blank">${applyPgTemplate(info, info.boxScreenshots)}</a></p>`) : ``}
 						</div>
@@ -798,7 +868,7 @@
 									</div>
 								` : ``}
 								<div>
-									<i aria-hidden="true" class="fa fa-clock-o"></i> ${info.playtime}
+									<i aria-hidden="true" class="fa fa-clock-o"></i> ${applyPgTemplate(info, info.panelPlaytime)}
 								</div>
 								<div>
 									<i aria-hidden="true" class="fa fa-trophy"></i> ${info.achievements === `no achievements` ? `<span class="text-muted">${applyPgTemplate(info, info.panelNoAchievements)}</span>` : (info.panelLinkAchievements ? `<a href="${applyPgTemplate(info, `https://steamcommunity.com/profiles/%steamid%/stats/%id%/?tab=achievements`)}" target="_blank">${applyPgTemplate(info, info.panelAchievements)}</a>` : `<span>${applyPgTemplate(info, info.panelAchievements)}</span>`)}
@@ -833,7 +903,7 @@
         const details = `
           <div style="padding-left: 5px; width: 100%;">
             <h2 style="color: ${info.barTitleColor}; font-size: 22px; margin: 0; padding-top: 5px;">${info.title}</h2>
-            <p style="color: ${info.barTextColor}; font-size: 10px; margin-bottom: 0; padding-bottom: 5px;">${info.playtime}, ${info.achievements === `no achievements` ? `<span class="text-muted">${applyPgTemplate(info, info.barNoAchievements)}</span>` : (info.barLinkAchievements ? `<a href="${applyPgTemplate(info, `https://steamcommunity.com/profiles/%steamid%/stats/%id%/?tab=achievements`)}" target="_blank">${applyPgTemplate(info, info.barAchievements)}</a>` : `<span>${applyPgTemplate(info, info.barAchievements)}</span>`)}${info.barLinkScreenshots ? `, ${info.screenshots === `no screenshots` ? `<span class="text-muted">${applyPgTemplate(info, info.barNoScreenshots)}</span>` : `<a href="${applyPgTemplate(info, `https://steamcommunity.com/profiles/%steamid%/screenshots?appid=%id%`)}" target="_blank">${applyPgTemplate(info, info.barScreenshots)}</a>`}` : ``}</p>
+            <p style="color: ${info.barTextColor}; font-size: 10px; margin-bottom: 0; padding-bottom: 5px;">${applyPgTemplate(info, info.barPlaytime)}, ${info.achievements === `no achievements` ? `<span class="text-muted">${applyPgTemplate(info, info.barNoAchievements)}</span>` : (info.barLinkAchievements ? `<a href="${applyPgTemplate(info, `https://steamcommunity.com/profiles/%steamid%/stats/%id%/?tab=achievements`)}" target="_blank">${applyPgTemplate(info, info.barAchievements)}</a>` : `<span>${applyPgTemplate(info, info.barAchievements)}</span>`)}${info.barLinkScreenshots ? `, ${info.screenshots === `no screenshots` ? `<span class="text-muted">${applyPgTemplate(info, info.barNoScreenshots)}</span>` : `<a href="${applyPgTemplate(info, `https://steamcommunity.com/profiles/%steamid%/screenshots?appid=%id%`)}" target="_blank">${applyPgTemplate(info, info.barScreenshots)}</a>`}` : ``}</p>
           </div>
         `;
         html = `
@@ -864,9 +934,6 @@
         break;
       }
       case `custom`: {
-        if (generatorElement) {
-          info.customHtml = document.querySelector(`#custom-html`).value;
-        }
         html = applyPgTemplate(info, info.customHtml).replace(/%review%/g, reviewPreview);
         break;
       }
@@ -941,6 +1008,7 @@
       .replace(/%title%/g, info.title)
       .replace(/%id%/g, info.id)
       .replace(/%playtime%/g, info.playtime)
+      .replace(/%playtime_this_month%/g, info.playtimeThisMonth)
       .replace(/%achievements%/g, info.achievements)
       .replace(/%achievements_count%/g, achievements_count)
       .replace(/%achievements_total%/g, achievements_total)
@@ -977,6 +1045,8 @@
     preset.review = info.review;
     switch (preset.format) {
       case `box`:
+        preset.boxPlaytime = info.boxPlaytime;
+        preset.boxShowPlaytimeThisMonth = info.boxShowPlaytimeThisMonth;
         preset.boxAchievements = info.boxAchievements;
         preset.boxNoAchievements = info.boxNoAchievements;
         preset.boxLinkAchievements = info.boxLinkAchievements;
@@ -986,6 +1056,8 @@
         preset.boxReviewPosition = info.boxReviewPosition;
         break;
       case `panel`:
+        preset.panelPlaytime = info.panelPlaytime;
+        preset.panelShowPlaytimeThisMonth = info.panelShowPlaytimeThisMonth;
         preset.panelAchievements = info.panelAchievements;
         preset.panelNoAchievements = info.panelNoAchievements;
         preset.panelLinkAchievements = info.panelLinkAchievements;
@@ -1000,6 +1072,8 @@
         preset.panelUseCollapsibleReview = info.panelUseCollapsibleReview;
         break;
       case `bar`:
+        preset.barPlaytime = info.barPlaytime;
+        preset.barShowPlaytimeThisMonth = info.barShowPlaytimeThisMonth;
         preset.barAchievements = info.barAchievements;
         preset.barNoAchievements = info.barNoAchievements;
         preset.barLinkAchievements = info.barLinkAchievements;
