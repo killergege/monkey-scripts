@@ -17,7 +17,7 @@
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/DomParser.js
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.1/utils/Request.js
 // @run-at document-idle
-// @version 3.1.2
+// @version 3.1.3
 // @downloadURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
 // @updateURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
 // ==/UserScript==
@@ -731,11 +731,13 @@
       info.boxPlaytime = boxPlaytime.value;
       info.boxShowPlaytimeThisMonth = document.querySelector(`#box-show-playtime-this-month`).checked;
       if (info.boxShowPlaytimeThisMonth) {
-        info.boxPlaytime += ` (%playtime_this_month% this month)`;
+        info.boxPlaytime = `%playtime% playtime (%playtime_this_month% this month)`;
       } else {
-        info.boxPlaytime = info.boxPlaytime.replace(/\s\(%playtime_this_month%\sthis\smonth\)/, ``);
+        info.boxPlaytime = `%playtime% playtime`;
       }
-      boxPlaytime.value = info.boxPlaytime;
+      if (info.boxPlaytime !== boxPlaytime.value) {
+        boxPlaytime.value = info.boxPlaytime;
+      }
       info.boxAchievements = document.querySelector(`#box-achievements`).value;
       info.boxNoAchievements = document.querySelector(`#box-no-achievements`).value;
       info.boxLinkAchievements = document.querySelector(`#box-link-achievements`).checked;
@@ -748,11 +750,13 @@
       info.panelPlaytime = panelPlaytime.value;
       info.panelShowPlaytimeThisMonth = document.querySelector(`#panel-show-playtime-this-month`).checked;
       if (info.panelShowPlaytimeThisMonth) {
-        info.panelPlaytime += ` (%playtime_this_month% this month)`;
+        info.panelPlaytime = `%playtime% playtime (%playtime_this_month% this month)`;
       } else {
-        info.panelPlaytime = info.panelPlaytime.replace(/\s\(%playtime_this_month%\sthis\smonth\)/, ``);
+        info.panelPlaytime = `%playtime% playtime`;
       }
-      panelPlaytime.value = info.panelPlaytime;
+      if (info.panelPlaytime !== panelPlaytime.value) {
+        panelPlaytime.value = info.panelPlaytime;
+      }
       info.panelAchievements = document.querySelector(`#panel-achievements`).value;
       info.panelNoAchievements = document.querySelector(`#panel-no-achievements`).value;
       info.panelLinkAchievements = document.querySelector(`#panel-link-achievements`).checked;
@@ -770,11 +774,13 @@
       info.barPlaytime = barPlaytime.value;
       info.barShowPlaytimeThisMonth = document.querySelector(`#bar-show-playtime-this-month`).checked;
       if (info.barShowPlaytimeThisMonth) {
-        info.barPlaytime += ` (%playtime_this_month% this month)`;
+        info.barPlaytime = `%playtime% playtime (%playtime_this_month% this month)`;
       } else {
-        info.barPlaytime = info.barPlaytime.replace(/\s\(%playtime_this_month%\sthis\smonth\)/, ``);
+        info.barPlaytime = `%playtime% playtime`;
       }
-      barPlaytime.value = info.barPlaytime;
+      if (info.barPlaytime !== barPlaytime.value) {
+        barPlaytime.value = info.barPlaytime;
+      }
       info.barAchievements = document.querySelector(`#bar-achievements`).value;
       info.barNoAchievements = document.querySelector(`#bar-no-achievements`).value;
       info.barLinkAchievements = document.querySelector(`#bar-link-achievements`).checked;

@@ -2,7 +2,7 @@
 
 Adds some cool features to [BLAEO](https://backlog-deepness.rhcloud.com/).
 
-### [Install](https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.2/scripts/enhanced-blaeo/enhanced-blaeo.user.js)
+### [Install](https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.3/scripts/enhanced-blaeo/enhanced-blaeo.user.js)
 
 ---
 
