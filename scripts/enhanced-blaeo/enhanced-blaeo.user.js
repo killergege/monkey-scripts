@@ -17,7 +17,7 @@
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/DomParser.js
 // @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.1/utils/Request.js
 // @run-at document-idle
-// @version 3.1.3
+// @version 3.1.4
 // @downloadURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
 // @updateURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
 // ==/UserScript==
@@ -362,7 +362,7 @@
       return;
     }
     const searchResultsElement = document.querySelector(`#search-results`);
-    const text = (await monkeyRequest.send(`${url}/users/+${settings.steamId}/games/filter?q=${document.querySelector(`#filter-games`).value}&exclude=vbyypyb`)).text;
+    const text = (await monkeyRequest.send(`${url}/users/+${settings.steamId}/games/filter?q=${document.querySelector(`#filter-games`).value}`)).text;
     searchResultsElement.innerHTML = text;
     const elements = searchResultsElement.querySelectorAll(`.game`);
     for (const element of elements) {
