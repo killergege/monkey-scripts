@@ -2,7 +2,7 @@
 
 Notifies the user when a SGTools rules check is complete and has an option to redirect to the giveaway.
 
-### [Install](https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/scripts/sgtools-notifier/sgtools-notifier.user.js)
+### [Install](https://raw.githubusercontent.com/rafaelgssa/monkey-scripts/3.1.0/scripts/sgtools-notifier/sgtools-notifier.user.js)
 
 ---
 

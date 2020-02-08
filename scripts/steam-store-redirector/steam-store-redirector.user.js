@@ -1,5 +1,5 @@
 // ==UserScript==
-// @author gsrafael01
+// @author rafaelgssa
 // @description Redirects removed games from the Steam store to SteamCommunity or SteamDB.
 // @grant GM.info
 // @grant GM.getValue
@@ -14,12 +14,12 @@
 // @namespace steamStoreRedirector
 // @noframes
 // @require https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/Settings.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/MutationObserver.js
+// @require https://raw.githubusercontent.com/rafaelgssa/monkey-scripts/3.1.0/utils/Settings.js
+// @require https://raw.githubusercontent.com/rafaelgssa/monkey-scripts/3.1.0/utils/MutationObserver.js
 // @run-at document-start
 // @version 3.1.0
-// @downloadURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/steam-store-redirector/steam-store-redirector.user.js
-// @updateURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/steam-store-redirector/steam-store-redirector.user.js
+// @downloadURL https://github.com/rafaelgssa/monkey-scripts/raw/master/scripts/steam-store-redirector/steam-store-redirector.user.js
+// @updateURL https://github.com/rafaelgssa/monkey-scripts/raw/master/scripts/steam-store-redirector/steam-store-redirector.user.js
 // ==/UserScript==
 // ==/UserScript==
 

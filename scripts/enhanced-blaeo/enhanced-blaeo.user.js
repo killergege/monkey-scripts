@@ -1,5 +1,5 @@
 // ==UserScript==
-// @author gsrafael01
+// @author rafaelgssa
 // @connect steamcommunity.com
 // @connect steamgifts.com
 // @description Adds some cool features to BLAEO.
@@ -14,12 +14,12 @@
 // @name Enhanced BLAEO
 // @namespace enhancedBlaeo
 // @require https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/DomParser.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.1/utils/Request.js
+// @require https://raw.githubusercontent.com/rafaelgssa/monkey-scripts/3.1.0/utils/DomParser.js
+// @require https://raw.githubusercontent.com/rafaelgssa/monkey-scripts/3.1.1/utils/Request.js
 // @run-at document-idle
-// @version 3.1.4
-// @downloadURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
-// @updateURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
+// @version 3.1.5
+// @downloadURL https://github.com/rafaelgssa/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
+// @updateURL https://github.com/rafaelgssa/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
 // ==/UserScript==
 
 (() => {
@@ -232,12 +232,11 @@
 
   async function syncOwnedGames() {
     settings.ownedGames = [];
-    const dom = (await monkeyRequest.send(`${url}/users/+${settings.steamId}/games`)).dom;
-    if (dom) {
-      const elements = dom.querySelectorAll(`.steam`);
+    const json = (await monkeyRequest.send(`${url}/users/+${settings.steamId}/games.json`)).json;
+    if (json) {
       const ids = new Set();
-      for (const element of elements) {
-        ids.add(parseInt(element.getAttribute(`href`).match(/\d+/)[0]));
+      for (const game of json.games) {
+        ids.add(game.steam_id);
       }
       settings.ownedGames.push(...ids);
       settings.lastSync = Date.now();

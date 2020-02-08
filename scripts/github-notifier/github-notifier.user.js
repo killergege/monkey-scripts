@@ -1,17 +1,17 @@
 // ==UserScript==
-// @author gsrafael01
+// @author rafaelgssa
 // @description Checks for unread notifications on GitHub every 60 seconds and notifies the user about them.
 // @grant none
 // @match https://github.com/*
 // @name GitHub Notifier
 // @namespace githubNotifier
 // @noframes
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/DomParser.js
-// @require https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/utils/Request.js
+// @require https://raw.githubusercontent.com/rafaelgssa/monkey-scripts/3.1.0/utils/DomParser.js
+// @require https://raw.githubusercontent.com/rafaelgssa/monkey-scripts/3.1.0/utils/Request.js
 // @run-at document-end
 // @version 3.1.0
-// @downloadURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/github-notifier/github-notifier.user.js
-// @updateURL https://github.com/gsrafael01/monkey-scripts/raw/master/scripts/github-notifier/github-notifier.user.js
+// @downloadURL https://github.com/rafaelgssa/monkey-scripts/raw/master/scripts/github-notifier/github-notifier.user.js
+// @updateURL https://github.com/rafaelgssa/monkey-scripts/raw/master/scripts/github-notifier/github-notifier.user.js
 // ==/UserScript==
 // ==/UserScript==
 

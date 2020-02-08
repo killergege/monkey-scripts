@@ -2,7 +2,7 @@
 
 Redirects removed games from the Steam store to SteamCommunity or SteamDB.
 
-### [Install](https://raw.githubusercontent.com/gsrafael01/monkey-scripts/3.1.0/scripts/steam-store-redirector/steam-store-redirector.user.js)
+### [Install](https://raw.githubusercontent.com/rafaelgssa/monkey-scripts/3.1.0/scripts/steam-store-redirector/steam-store-redirector.user.js)
 
 ---
 
