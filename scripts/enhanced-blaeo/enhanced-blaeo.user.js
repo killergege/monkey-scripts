@@ -17,7 +17,7 @@
 // @require https://raw.githubusercontent.com/rafaelgssa/monkey-scripts/3.1.0/utils/DomParser.js
 // @require https://raw.githubusercontent.com/rafaelgssa/monkey-scripts/3.1.1/utils/Request.js
 // @run-at document-idle
-// @version 3.1.5
+// @version 3.1.6
 // @downloadURL https://github.com/rafaelgssa/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
 // @updateURL https://github.com/rafaelgssa/monkey-scripts/raw/master/scripts/enhanced-blaeo/enhanced-blaeo.user.js
 // ==/UserScript==
