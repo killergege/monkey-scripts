@@ -28,6 +28,13 @@
   const isInBlaeo = window.location.host === `www.backlog-assassins.net`;
   const settings = {};
   const url = `https://www.backlog-assassins.net`;
+  const completionColors = {
+      'beaten': `#5cb85c`,
+      'completed': `#5bc0de`,
+      'never-played': `#eeeeee`,
+      'unfinished': `#f0ad4e`,
+      'wont-play': `#d9534f`
+  };
 
   init();
 
@@ -402,6 +409,7 @@
         <p>These templates are replaced with info about the game:</p>
         <ul>
           <li><b>%state%</b> - The state of the game (beaten, completed, never-played, unfinished or wont-play)</li>
+          <li><b>%state_color%</b> - The color matching the state of the game.
           <li><b>%image%</b> - The URL of the game image.</li>
           <li><b>%title%</b> - The title of the game.</li>
           <li><b>%id%</b> - The Steam appid of the game.</li>
@@ -627,7 +635,7 @@
 		`;
     const dropdownElements = generatorElement.querySelectorAll(`.dropdown-menu li`);
     for (const dropdownElement of dropdownElements) {
-      dropdownElement.addEventListener(`click`, () => applyPgPreset(defaultInfo, info, items, dropdownElement.textContent));
+      dropdownElement.addEventListener(`click`, () => applyPgPreset(defaultInfo, info, items, dropdownElement.textContent.trim()));
     }
     document.querySelector(`.nav-tabs`).addEventListener(`click`, () => generatePgGame(generatorElement, defaultInfo, info));
     const tabElements = generatorElement.querySelectorAll(`#generator-nav a[data-toggle="tab"]`);
@@ -711,13 +719,6 @@
       info.format = generatorElement.querySelector(`.active`).getAttribute(`data-format`);
       info.review = document.querySelector(`#review`).value;
     }
-    const completionColors = {
-      'beaten': `#5cb85c`,
-      'completed': `#5bc0de`,
-      'never-played': `#eeeeee`,
-      'unfinished': `#f0ad4e`,
-      'wont-play': `#d9534f`
-    };
     const panelColors = {
       Blue: `info`,
       Green: `success`,
@@ -1009,6 +1010,7 @@
       .replace(/%steamid%/g, settings.steamId)
       .replace(/%username%/g, settings.username)
       .replace(/%state%/g, info.state)
+      .replace(/%state_color%/g, completionColors[info.state])
       .replace(/%image%/g, info.image)
       .replace(/%title%/g, info.title)
       .replace(/%id%/g, info.id)
@@ -1046,7 +1048,7 @@
     presetButton.textContent = `Saving...`;
     const name = document.querySelector(`#preset-name`).value || `UntitledPreset${settings.pgPresets.length + 1}`;
     const preset = settings.pgPresets.filter(x => x.name === name)[0] || (settings.pgPresets.push({ name }) && settings.pgPresets[settings.pgPresets.length - 1]);
-    preset.format = info.format;
+    preset.format = document.querySelector(`.active`).getAttribute(`data-format`);;
     preset.review = info.review;
     switch (preset.format) {
       case `box`:
@@ -1097,7 +1099,7 @@
         preset.barReviewTriggerMethod = info.barReviewTriggerMethod;
         break;
       case `custom`:
-        preset.customHtml = info.customHtml;
+        preset.customHtml = document.querySelector(`#custom-html`).value;
     }
     await GM.setValue(`pgPresets`, JSON.stringify(settings.pgPresets));
     window.alert(`Preset saved!`);
